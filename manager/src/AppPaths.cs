@@ -28,7 +28,7 @@ public sealed class AppPaths
 
     public static string GameKeyForPath(string path)
     {
-        var norm = path.Replace('\\', '/').TrimEnd('/').ToLowerInvariant();
+        var norm = Path.GetFullPath(path).Replace('\\', '/').TrimEnd('/').ToLowerInvariant();
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(norm));
         return "custom-" + Convert.ToHexString(hash).ToLowerInvariant()[..8];
     }

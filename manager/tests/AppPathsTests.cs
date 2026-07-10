@@ -26,4 +26,12 @@ public class AppPathsTests
         Assert.Equal(15, a.Length);            // "custom-" + 8 hex
         Assert.Equal(a, b);                    // normalization makes these equal
     }
+
+    [Fact]
+    public void GameKeyForPath_resolves_relative_to_absolute()
+    {
+        var rel = "SomeGameDir";
+        var abs = Path.GetFullPath(rel);
+        Assert.Equal(AppPaths.GameKeyForPath(abs), AppPaths.GameKeyForPath(rel));
+    }
 }
