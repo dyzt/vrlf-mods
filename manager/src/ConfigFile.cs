@@ -87,6 +87,7 @@ public static class ConfigFile
             {
                 var t = lines[j].body.TrimStart();
                 if (t.StartsWith("##")) comments.Insert(0, t[2..].Trim());
+                else if (Bepinex(format) && t.StartsWith("#")) continue;    // skip BepInEx metadata (# Setting type / # Default value)
                 else if (!Bepinex(format) && t.StartsWith("#")) comments.Insert(0, t[1..].Trim());
                 else if (t.Length == 0 && comments.Count == 0) continue;   // skip blanks just above
                 else break;
