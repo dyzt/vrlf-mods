@@ -13,3 +13,10 @@ public sealed class FakeHttpFetcher : IHttpFetcher
         return Task.FromResult(_map.TryGetValue(url, out var v) ? v : null);
     }
 }
+
+public sealed class FakeSteamPaths : VrlfMods.ISteamPaths
+{
+    private readonly string? _root;
+    public FakeSteamPaths(string? root) => _root = root;
+    public string? SteamRoot() => _root;
+}
