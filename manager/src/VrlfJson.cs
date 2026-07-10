@@ -8,4 +8,7 @@ namespace VrlfMods;
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 [JsonSerializable(typeof(ModRegistry))]
 [JsonSerializable(typeof(Receipt))]
+[JsonSerializable(typeof(ListReport))]
+[JsonSerializable(typeof(ModStatus))]
+[JsonSerializable(typeof(ActionReport))]
 public partial class VrlfJson : JsonSerializerContext { }

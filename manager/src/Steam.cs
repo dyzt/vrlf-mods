@@ -37,12 +37,12 @@ public static class SteamVdf
     private static string Unescape(string s) => s.Replace("\\\\", "\\");
 }
 
-public sealed class SteamLocator
+public class SteamLocator
 {
     private readonly ISteamPaths _steam;
     public SteamLocator(ISteamPaths steam) => _steam = steam;
 
-    public string? FindGameDir(long appid)
+    public virtual string? FindGameDir(long appid)
     {
         var root = _steam.SteamRoot();
         if (string.IsNullOrEmpty(root)) return null;

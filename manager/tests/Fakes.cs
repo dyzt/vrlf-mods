@@ -40,3 +40,11 @@ public sealed class AnyUrlFetcher : VrlfMods.IHttpFetcher
     public AnyUrlFetcher(byte[]? bytes) => _bytes = bytes;
     public Task<byte[]?> TryGet(string url) => Task.FromResult(_bytes);
 }
+
+public sealed class SteamLocatorStub : VrlfMods.SteamLocator
+{
+    private readonly long _appid; private readonly string _dir;
+    public SteamLocatorStub(long appid, string dir) : base(new FakeSteamPaths(null))
+    { _appid = appid; _dir = dir; }
+    public override string? FindGameDir(long appid) => appid == _appid ? _dir : null;
+}

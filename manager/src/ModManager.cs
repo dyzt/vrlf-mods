@@ -1,0 +1,133 @@
+namespace VrlfMods;
+
+public record GameStatus(long Appid, string Name, bool Detected, string? Path, bool Installed, string? InstalledVersion);
+public record ModStatus(string Id, string Name, string Version, string? InstalledVersion, List<GameStatus> Games);
+public record ListReport(string RegistrySource, List<ModStatus> Mods);
+public record ActionReport(bool Ok, string Command, List<OpResult> Results);
+
+public sealed class ModManager
+{
+    private readonly RegistryLoader _loader;
+    private readonly SteamLocator _steam;
+    private readonly Installer _installer;
+    private readonly ReceiptStore _receipts;
+    private readonly Vigem _vigem;
+
+    public ModManager(RegistryLoader loader, SteamLocator steam, Installer installer,
+                      ReceiptStore receipts, Vigem vigem)
+    { _loader = loader; _steam = steam; _installer = installer; _receipts = receipts; _vigem = vigem; }
+
+    public async Task<ListReport> List()
+    {
+        var (reg, source) = await _loader.Load();
+        return new ListReport(source, reg.Mods.Select(StatusFor).ToList());
+    }
+
+    public async Task<ModStatus?> Status(string id)
+    {
+        var (reg, _) = await _loader.Load();
+        var mod = reg.Find(id);
+        return mod is null ? null : StatusFor(mod);
+    }
+
+    private ModStatus StatusFor(ModEntry mod)
+    {
+        string? installedVersion = null;
+        var games = new List<GameStatus>();
+        foreach (var g in mod.Games)
+        {
+            var key = AppPaths.GameKeyForAppid(g.Appid);
+            var dir = _steam.FindGameDir(g.Appid);
+            var rcpt = _receipts.Load(mod.Id, key);
+            if (rcpt is not null) installedVersion = rcpt.Version;
+            games.Add(new GameStatus(g.Appid, g.Name, dir is not null, dir,
+                rcpt is not null, rcpt?.Version));
+        }
+        return new ModStatus(mod.Id, mod.Name, mod.Version, installedVersion, games);
+    }
+
+    public async Task<ActionReport> Install(string id, long? appid, string? path)
+    {
+        var (reg, _) = await _loader.Load();
+        var mod = reg.Find(id);
+        if (mod is null) return Fail("install", $"unknown mod id '{id}'");
+
+        var targets = ResolveTargets(mod, appid, path, out var problems);
+        if (targets.Count == 0) return new ActionReport(false, "install", problems);
+
+        var results = new List<OpResult>(problems);
+        foreach (var t in targets) results.Add(await _installer.Install(mod, t));
+        return new ActionReport(results.All(r => r.Ok), "install", results);
+    }
+
+    public async Task<ActionReport> Uninstall(string id, long? appid)
+    {
+        var (reg, _) = await _loader.Load();
+        var mod = reg.Find(id);
+        if (mod is null) return Fail("uninstall", $"unknown mod id '{id}'");
+
+        var results = new List<OpResult>();
+        var keys = appid is null
+            ? mod.Games.Select(g => AppPaths.GameKeyForAppid(g.Appid)).ToList()
+            : new List<string> { AppPaths.GameKeyForAppid(appid.Value) };
+        // Include any custom-path receipts for this mod too.
+        keys.AddRange(_receipts.All().Where(r => r.ModId == mod.Id && r.GameKey.StartsWith("custom-"))
+                                     .Select(r => r.GameKey));
+        foreach (var key in keys.Distinct())
+        {
+            var rcpt = _receipts.Load(mod.Id, key);
+            if (rcpt is null) continue;
+            results.Add(_installer.Uninstall(rcpt));
+        }
+        if (results.Count == 0) return Fail("uninstall", $"{mod.Id} is not installed");
+        return new ActionReport(results.All(r => r.Ok), "uninstall", results);
+    }
+
+    public async Task<ActionReport> Update(string? id)
+    {
+        var (reg, _) = await _loader.Load();
+        var results = new List<OpResult>();
+        foreach (var rcpt in _receipts.All())
+        {
+            if (id is not null && !string.Equals(rcpt.ModId, id, StringComparison.OrdinalIgnoreCase)) continue;
+            var mod = reg.Find(rcpt.ModId);
+            if (mod is null) continue;
+            results.Add(await _installer.Update(mod, rcpt));
+        }
+        if (results.Count == 0) return Fail("update", id is null ? "nothing installed" : $"{id} is not installed");
+        return new ActionReport(results.All(r => r.Ok), "update", results);
+    }
+
+    public async Task<ActionReport> EnsureVigem()
+    {
+        var (reg, _) = await _loader.Load();
+        var res = await _vigem.Ensure(reg.Vigembus);
+        return new ActionReport(res.Ok, "vigembus", new() { res });
+    }
+
+    private List<GameTarget> ResolveTargets(ModEntry mod, long? appid, string? path, out List<OpResult> problems)
+    {
+        problems = new();
+        if (path is not null)
+        {
+            var full = System.IO.Path.GetFullPath(path);
+            return new() { new GameTarget(AppPaths.GameKeyForPath(full), full) };
+        }
+
+        var games = appid is null ? mod.Games : mod.Games.Where(g => g.Appid == appid.Value).ToList();
+        var targets = new List<GameTarget>();
+        foreach (var g in games)
+        {
+            var dir = _steam.FindGameDir(g.Appid);
+            if (dir is null)
+                problems.Add(new OpResult(false, AppPaths.GameKeyForAppid(g.Appid),
+                    $"{g.Name} (appid {g.Appid}) not found via Steam — pass --path <game dir> to install manually"));
+            else
+                targets.Add(new GameTarget(AppPaths.GameKeyForAppid(g.Appid), dir));
+        }
+        return targets;
+    }
+
+    private static ActionReport Fail(string cmd, string msg) =>
+        new(false, cmd, new() { new OpResult(false, "", msg) });
+}
