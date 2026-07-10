@@ -2,7 +2,7 @@ namespace VrlfMods;
 
 public enum Screen { List, Mod }
 public enum RowKind { Header, Action, Toggle, Separator, Info }
-public enum TuiKey { Up, Down, Enter, Back, Quit, Vigem, Refresh, Other }
+public enum TuiKey { Up, Down, Enter, Back, Quit, Refresh, Other }
 public enum ActionKind { None, Open, Back, Quit, Install, Reinstall, Uninstall, Update, Vigem, Refresh, Toggle }
 
 public record MenuRow(RowKind Kind, string Text, ActionKind Action = ActionKind.None,
@@ -30,9 +30,36 @@ public static class TuiModel
         return $"● installed v{m.InstalledVersion}";
     }
 
-    public static List<MenuRow> ListRows(ListReport r) =>
-        r.Mods.Select(m => new MenuRow(RowKind.Action, $"{m.Name,-30} {RowStatus(m)}",
-            ActionKind.Open, ModId: m.Id)).ToList();
+    // Drop the redundant " VRLF Mod" suffix every entry carries — pure repetition in a list
+    // already titled "VRLF Mod Manager". Leave any off-convention name untouched.
+    public static string DisplayName(string name) =>
+        name.EndsWith(" VRLF Mod", StringComparison.Ordinal) ? name[..^" VRLF Mod".Length] : name;
+
+    public static List<MenuRow> ListRows(ListReport r)
+    {
+        // Pad every name to the widest one (mods + the ViGEmBus row) so all the
+        // installed/not-installed labels line up in a single column.
+        int width = Math.Max("ViGEmBus".Length,
+            r.Mods.Count == 0 ? 0 : r.Mods.Max(m => DisplayName(m.Name).Length));
+
+        var rows = new List<MenuRow>();
+
+        // ViGEmBus is now a real selectable row at the top (was a hidden 'V' hotkey).
+        // Selecting it installs the driver; when already present it just re-confirms.
+        string vstatus = r.VigemInstalled ? "● installed" : "○ not installed";
+        rows.Add(new MenuRow(RowKind.Action, $"{"ViGEmBus".PadRight(width)}   {vstatus}",
+            ActionKind.Vigem,
+            Help: r.VigemInstalled
+                ? "Virtual gamepad driver — required for 2-gun co-op. Already installed."
+                : "Virtual gamepad driver — required for 2-gun co-op. Enter to install."));
+        rows.Add(new MenuRow(RowKind.Separator, "", Selectable: false));
+
+        foreach (var m in r.Mods)
+            rows.Add(new MenuRow(RowKind.Action, $"{DisplayName(m.Name).PadRight(width)}   {RowStatus(m)}",
+                ActionKind.Open, ModId: m.Id));
+
+        return rows;
+    }
 
     public static List<MenuRow> ModRows(ModStatus m, ModConfig? cfg)
     {
@@ -80,7 +107,6 @@ public static class TuiModel
         {
             case TuiKey.Quit: return (s, new TuiAction(ActionKind.Quit));
             case TuiKey.Refresh: return (s, new TuiAction(ActionKind.Refresh));
-            case TuiKey.Vigem when s.Screen == Screen.List: return (s, new TuiAction(ActionKind.Vigem));
             case TuiKey.Up: return (s with { Cursor = NextSelectable(rows, s.Cursor, -1) }, new TuiAction(ActionKind.None));
             case TuiKey.Down: return (s with { Cursor = NextSelectable(rows, s.Cursor, +1) }, new TuiAction(ActionKind.None));
             case TuiKey.Back:

@@ -72,4 +72,43 @@ public class TuiModelTests
         Assert.Equal(Screen.List, s.Screen);
         Assert.Equal(ActionKind.Back, act.Kind);
     }
+
+    [Fact] public void DisplayName_strips_vrlf_suffix()
+    {
+        Assert.Equal("Reload", TuiModel.DisplayName("Reload VRLF Mod"));
+        Assert.Equal("Custom Name", TuiModel.DisplayName("Custom Name"));   // off-convention → untouched
+    }
+
+    [Fact] public void ListRows_puts_selectable_vigembus_first_reflecting_status()
+    {
+        var mods = new List<ModStatus> { Installed() };
+
+        var off = TuiModel.ListRows(new ListReport("net", mods, VigemInstalled: false));
+        Assert.Equal(ActionKind.Vigem, off[0].Action);
+        Assert.True(off[0].Selectable);
+        Assert.Contains("ViGEmBus", off[0].Text);
+        Assert.Contains("not installed", off[0].Text);
+        Assert.Equal(RowKind.Separator, off[1].Kind);   // gap before the mods
+
+        var on = TuiModel.ListRows(new ListReport("net", mods, VigemInstalled: true));
+        Assert.Contains("installed", on[0].Text);
+        Assert.DoesNotContain("not installed", on[0].Text);
+    }
+
+    [Fact] public void ListRows_aligns_status_column_across_rows()
+    {
+        var mods = new List<ModStatus> {
+            new("a", "Short VRLF Mod", "1", "1", new() { new GameStatus(1, "g", true, "p", true, "1") }),
+            new("b", "A Much Longer Mod Name VRLF Mod", "1", "1", new() { new GameStatus(2, "g", true, "p", true, "1") }),
+        };
+        var rows = TuiModel.ListRows(new ListReport("net", mods, false));
+        var modRows = rows.Where(r => r.Action == ActionKind.Open).ToList();
+        Assert.Equal(2, modRows.Count);
+        Assert.DoesNotContain("VRLF Mod", modRows[0].Text);   // suffix stripped
+        // status text begins at the same column in every row (padded to one width)
+        int c0 = modRows[0].Text.IndexOf(TuiModel.RowStatus(mods[0]), StringComparison.Ordinal);
+        int c1 = modRows[1].Text.IndexOf(TuiModel.RowStatus(mods[1]), StringComparison.Ordinal);
+        Assert.True(c0 > 0);
+        Assert.Equal(c0, c1);
+    }
 }

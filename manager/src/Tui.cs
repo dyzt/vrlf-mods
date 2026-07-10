@@ -58,6 +58,7 @@ public static class Tui
                     break;
                 case ActionKind.Vigem:
                     message = await Working(() => mm.EnsureVigem());
+                    list = await mm.List();   // reflect the new install state in the ViGEmBus row
                     break;
                 case ActionKind.Refresh:
                     message = "refreshed";
@@ -106,7 +107,6 @@ public static class Tui
         _ => char.ToLowerInvariant(k.KeyChar) switch
         {
             'q' => TuiKey.Quit,
-            'v' => TuiKey.Vigem,
             'r' => TuiKey.Refresh,
             _ => TuiKey.Other,
         }
@@ -117,7 +117,7 @@ public static class Tui
         Console.Clear();
         Console.WriteLine(s.Screen == Screen.List || mod is null
             ? "  VRLF Mod Manager\n"
-            : $"  {mod.Name}  —  {TuiModel.RowStatus(mod)}\n");
+            : $"  {TuiModel.DisplayName(mod.Name)}  —  {TuiModel.RowStatus(mod)}\n");
 
         for (int i = 0; i < rows.Count; i++)
         {
@@ -133,7 +133,7 @@ public static class Tui
         if (message is not null) Console.WriteLine($"\n  {message}");
 
         Console.WriteLine(s.Screen == Screen.List
-            ? "\n  ↑/↓ move   Enter open   V ViGEmBus   R refresh   Q quit"
+            ? "\n  ↑/↓ move   Enter select   R refresh   Q quit"
             : "\n  ↑/↓ move   Enter select/toggle   Esc back   Q quit");
     }
 }

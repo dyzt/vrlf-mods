@@ -5,7 +5,18 @@
     { "id": "hotd1", "name": "House of the Dead: Remake VRLF Mod",
       "version": "1.0.1", "zip": "mods/hotd1/dist/hotd1-v1.0.1.zip", "sha256": "1e924004ecd19bc0ffa928a304b05f89bf5cbc4b77c304962906f011fd69cf9d",
       "games": [ { "appid": 1694600, "name": "THE HOUSE OF THE DEAD: Remake" } ],
-      "requiresVigembusForCoop": true, "notes": null },
+      "requiresVigembusForCoop": true, "notes": null,
+      "config": {
+        "file": "BepInEx/plugins/HotdRemakeVrlf.cfg", "format": "kv",
+        "toggles": [
+          { "key": "HideCrosshair", "label": "Hide crosshair", "help": "Hide the in-game crosshair for players this mod drives (aim by the VR gun)." },
+          { "key": "InvertY", "label": "Invert aim Y (P1)", "help": "Flip the vertical aim axis if aim comes out upside-down." },
+          { "key": "EnableAbsoluteAim", "label": "Absolute VR aim", "help": "Drive the crosshair from the framework aim bus instead of native mouse aim." },
+          { "key": "EnableCoop", "label": "Enable 2-player co-op", "help": "Allow Player 2 (virtual pad) to join for co-op." },
+          { "key": "EnableDeviceLock", "label": "Lock input devices (co-op)", "help": "Block stray controllers so only the framework's virtual pad is assigned." },
+          { "key": "LogAim", "label": "Verbose aim log", "help": "Write per-frame aim diagnostics to the log (verbose)." }
+        ]
+      } },
     { "id": "hotd2", "name": "House of the Dead 2: Remake VRLF Mod",
       "version": "1.0", "zip": "mods/hotd2/dist/hotd2-v1.0.zip", "sha256": "684de9b130cd8c9d62877128fcce2ea5fd838c9d6311cfea1e99eaca75057b54",
       "games": [ { "appid": 3376690, "name": "THE HOUSE OF THE DEAD 2: Remake" } ],
@@ -18,13 +29,22 @@
           { "section": "Aim", "key": "ConfineCursor", "label": "Confine cursor to window" },
           { "section": "Aim", "key": "InvertY", "label": "Invert Y (P1)" },
           { "section": "Aim", "key": "PadAbsoluteAim", "label": "Absolute aim (P2 pad)" },
+          { "section": "Aim", "key": "PadInvertY", "label": "Invert Y (P2 pad)" },
+          { "section": "Aim", "key": "LogAim", "label": "Verbose aim log" },
           { "section": "General", "key": "VerboseLog", "label": "Verbose log" }
         ]
       } },
     { "id": "bbh", "name": "Big Buck Hunter Ultimate VRLF Mod",
       "version": "1.0.0", "zip": "mods/bbh/dist/bbh-v1.0.0.zip", "sha256": "0bf1188480844c07d782a81d288df3aa412653a9f5b39ed27fb1209785fa29f2",
       "games": [ { "appid": 3102290, "name": "Big Buck Hunter: Ultimate Trophy" } ],
-      "requiresVigembusForCoop": false, "notes": null },
+      "requiresVigembusForCoop": false, "notes": null,
+      "config": {
+        "file": "BepInEx/config/com.vrlf.bbh.cfg", "format": "bepinex",
+        "toggles": [
+          { "section": "General", "key": "HideReticle", "label": "Hide aim reticle" },
+          { "section": "General", "key": "HideGun", "label": "Hide corner gun viewmodel" }
+        ]
+      } },
     { "id": "heavy-fire-afghanistan", "name": "Heavy Fire: Afghanistan VRLF Mod",
       "version": "1.0", "zip": "mods/heavy-fire/dist/heavy-fire-v1.0.zip", "sha256": "ddd8da872b294f043f3e525d8469a6e3b015790f4d6a1eb0d6d5b7880bb54287",
       "games": [ { "appid": 305980, "name": "Heavy Fire: Afghanistan" } ],

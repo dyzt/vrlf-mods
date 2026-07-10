@@ -5,7 +5,7 @@ namespace VrlfMods;
 
 public record GameStatus(long Appid, string Name, bool Detected, string? Path, bool Installed, string? InstalledVersion);
 public record ModStatus(string Id, string Name, string Version, string? InstalledVersion, List<GameStatus> Games);
-public record ListReport(string RegistrySource, List<ModStatus> Mods);
+public record ListReport(string RegistrySource, List<ModStatus> Mods, bool VigemInstalled = false);
 public record ActionReport(bool Ok, string Command, List<OpResult> Results);
 
 public sealed class ModManager
@@ -25,7 +25,7 @@ public sealed class ModManager
     public async Task<ListReport> List()
     {
         var (reg, source) = await _loader.Load();
-        return new ListReport(source, reg.Mods.Select(StatusFor).ToList());
+        return new ListReport(source, reg.Mods.Select(StatusFor).ToList(), _vigem.IsInstalled());
     }
 
     public async Task<ModStatus?> Status(string id)
