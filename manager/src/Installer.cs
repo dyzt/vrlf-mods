@@ -125,7 +125,16 @@ public sealed class Installer
         {
             var src = System.IO.Path.Combine(backupDir, b.RelPath.Replace('/', System.IO.Path.DirectorySeparatorChar));
             var dst = System.IO.Path.Combine(r.GamePath, b.RelPath.Replace('/', System.IO.Path.DirectorySeparatorChar));
-            if (File.Exists(src)) { Directory.CreateDirectory(System.IO.Path.GetDirectoryName(dst)!); File.Copy(src, dst, overwrite: true); }
+            if (!File.Exists(src)) continue;
+            try
+            {
+                Directory.CreateDirectory(System.IO.Path.GetDirectoryName(dst)!);
+                File.Copy(src, dst, overwrite: true);
+            }
+            catch (Exception ex)
+            {
+                return new OpResult(false, r.GameKey, $"could not restore {b.RelPath}: {ex.Message}");
+            }
         }
         if (Directory.Exists(backupDir)) { try { Directory.Delete(backupDir, recursive: true); } catch { } }
 
@@ -140,10 +149,11 @@ public sealed class Installer
 
     private static void PruneEmptyDirs(string gamePath, List<InstalledFile> files)
     {
-        // Deepest-first, so parents empty out after children.
+        // Deepest-first, so parents empty out after their children are removed.
         var dirs = files
             .Select(f => System.IO.Path.GetDirectoryName(
-                System.IO.Path.Combine(gamePath, f.RelPath.Replace('/', System.IO.Path.DirectorySeparatorChar))))!
+                System.IO.Path.Combine(gamePath, f.RelPath.Replace('/', System.IO.Path.DirectorySeparatorChar)))
+                ?? gamePath)
             .Where(d => d.Length > gamePath.Length)
             .Distinct()
             .OrderByDescending(d => d.Length);
@@ -154,7 +164,7 @@ public sealed class Installer
                    && !Directory.EnumerateFileSystemEntries(cur).Any())
             {
                 try { Directory.Delete(cur); } catch { break; }
-                cur = System.IO.Path.GetDirectoryName(cur)!;
+                cur = System.IO.Path.GetDirectoryName(cur) ?? gamePath;
             }
         }
     }
