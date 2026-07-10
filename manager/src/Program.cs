@@ -119,15 +119,10 @@ internal static class Program
 
     private static async Task<int> Menu(ModManager mm)
     {
-        var list = await mm.List();
-        Output.ListText(list);
-        Console.WriteLine();
-        Console.WriteLine("Commands: install <id> | uninstall <id> | update | vigembus");
-        Console.Write("> ");
-        var line = Console.ReadLine();
-        if (string.IsNullOrWhiteSpace(line)) return 0;
-        var p = Cli.Parse(line.Split(' ', StringSplitOptions.RemoveEmptyEntries));
-        if (p.Error is not null) { Console.Error.WriteLine("error: " + p.Error); return 1; }
-        return await Run(p, mm);
+        // Piped / headless: print the plain list and exit rather than entering the key loop.
+        // The TUI needs an interactive console for both ReadKey and screen redraws.
+        if (Console.IsInputRedirected || Console.IsOutputRedirected)
+        { Output.ListText(await mm.List()); return 0; }
+        return await Tui.Run(mm);
     }
 }

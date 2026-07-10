@@ -133,6 +133,19 @@ public class ModManagerTests
     }
 
     [Fact]
+    public async Task Menu_falls_back_to_list_when_output_redirected()
+    {
+        var paths = TempPaths();
+        var (mm, _, _, _) = Build(paths, out _);
+        var orig = Console.Out; var sw = new StringWriter(); Console.SetOut(sw);
+        int code;
+        try { code = await Program.Run(Cli.Parse(new[] { "menu" }), mm); }
+        finally { Console.SetOut(orig); }
+        Assert.Equal(0, code);
+        Assert.Contains("Registry:", sw.ToString());     // printed the list, did not block on ReadKey
+    }
+
+    [Fact]
     public async Task Dispatch_status_unknown_json_returns_1_with_error_object()
     {
         var paths = TempPaths();
