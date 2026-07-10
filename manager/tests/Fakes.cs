@@ -20,3 +20,23 @@ public sealed class FakeSteamPaths : VrlfMods.ISteamPaths
     public FakeSteamPaths(string? root) => _root = root;
     public string? SteamRoot() => _root;
 }
+
+public sealed class FakeServiceDetector : VrlfMods.IServiceDetector
+{
+    private readonly bool _exists;
+    public FakeServiceDetector(bool exists) => _exists = exists;
+    public bool ServiceExists(string name) => _exists;
+}
+
+public sealed class FakeLauncher : VrlfMods.IProcessLauncher
+{
+    public string? Launched { get; private set; }
+    public void Launch(string path) => Launched = path;
+}
+
+public sealed class AnyUrlFetcher : VrlfMods.IHttpFetcher
+{
+    private readonly byte[]? _bytes;
+    public AnyUrlFetcher(byte[]? bytes) => _bytes = bytes;
+    public Task<byte[]?> TryGet(string url) => Task.FromResult(_bytes);
+}
