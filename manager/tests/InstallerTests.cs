@@ -148,4 +148,27 @@ public class InstallerTests
         Assert.False(res.Ok);
         Assert.False(File.Exists(Path.Combine(game, "a.dll")));    // rolled back
     }
+
+    [Fact]
+    public async Task Failed_repeat_install_does_not_revert_or_lose_the_original()
+    {
+        var paths = TempPaths();
+        var game = TempGameDir();
+        File.WriteAllText(Path.Combine(game, "winhttp.dll"), "ORIGINAL");
+        var v1 = MakeZip((@"winhttp.dll", "MODDED"));
+        var mod1 = Mod(v1);
+        var store = new ReceiptStore(paths);
+        await new Installer(new FakeHttpFetcher(new() { [RegistryLoader.ZipUrl(mod1)] = v1 }), paths, store)
+            .Install(mod1, new GameTarget("1", game));                     // install #1 ok
+
+        // install #2: re-writes winhttp then hits a zip-slip entry → throws mid-extract
+        var v2 = MakeZip((@"winhttp.dll", "MODDED2"), (@"..\evil.dll", "PWN"));
+        var mod2 = Mod(v2);
+        var res = await new Installer(new FakeHttpFetcher(new() { [RegistryLoader.ZipUrl(mod2)] = v2 }), paths, store)
+            .Install(mod2, new GameTarget("1", game));
+
+        Assert.False(res.Ok);
+        Assert.Equal("ORIGINAL", File.ReadAllText(Path.Combine(paths.BackupDir("demo", "1"), "winhttp.dll"))); // original safe
+        Assert.NotEqual("ORIGINAL", File.ReadAllText(Path.Combine(game, "winhttp.dll")));                       // prior install NOT reverted to vanilla
+    }
 }

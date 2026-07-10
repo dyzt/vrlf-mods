@@ -31,14 +31,15 @@ public sealed class Installer
             return new OpResult(false, target.Key,
                 $"sha256 mismatch for {mod.Id} — registry says {mod.Sha256}, got {Sha256Hex(bytes)}");
 
-        // Carry forward any prior install's original backups, and never re-back-up a file
-        // this same mod already installed (doing so would overwrite the saved original).
+        // A prior receipt means this mod is already installed here. Don't re-back-up files we
+        // ourselves installed (that would capture our modded file as the "original"), and don't
+        // let this call's rollback touch files/backups owned by that earlier install.
         var prior = _receipts.Load(mod.Id, target.Key);
         var priorInstalled = new HashSet<string>(
             prior?.Files.Select(f => f.RelPath) ?? Enumerable.Empty<string>());
 
         var written = new List<InstalledFile>();
-        var backups = new List<BackupRef>(prior?.Backups ?? Enumerable.Empty<BackupRef>());
+        var newBackups = new List<BackupRef>();   // backups made THIS call — the rollback scope
         var backupDir = _paths.BackupDir(mod.Id, target.Key);
 
         try
@@ -54,12 +55,12 @@ public sealed class Installer
                 var dest = Zip.ResolveDest(target.Path, entry.FullName);
 
                 if (File.Exists(dest) && !written.Any(w => w.RelPath == rel)
-                    && !priorInstalled.Contains(rel) && !backups.Any(b => b.RelPath == rel))
+                    && !priorInstalled.Contains(rel))
                 {
                     var backupPath = System.IO.Path.Combine(backupDir, rel.Replace('/', System.IO.Path.DirectorySeparatorChar));
                     Directory.CreateDirectory(System.IO.Path.GetDirectoryName(backupPath)!);
                     File.Copy(dest, backupPath, overwrite: true);
-                    backups.Add(new BackupRef(rel));
+                    newBackups.Add(new BackupRef(rel));
                 }
 
                 Directory.CreateDirectory(System.IO.Path.GetDirectoryName(dest)!);
@@ -67,14 +68,23 @@ public sealed class Installer
                 written.Add(new InstalledFile(rel, Sha256HexFile(dest)));
             }
 
-            // Receipt written LAST, but INSIDE the try so a Save failure rolls back
-            // instead of stranding the extracted files.
+            // Persist the union of earlier originals and this call's new backups, so uninstall
+            // can restore every displaced original.
+            var allBackups = new List<BackupRef>(prior?.Backups ?? Enumerable.Empty<BackupRef>());
+            foreach (var b in newBackups)
+                if (!allBackups.Any(x => x.RelPath == b.RelPath))
+                    allBackups.Add(b);
+
+            // Receipt written LAST, but INSIDE the try so a Save failure rolls back this call.
             _receipts.Save(new Receipt(mod.Id, mod.Version, target.Key, target.Path,
-                written, backups, DateTime.UtcNow.ToString("O")));
+                written, allBackups, DateTime.UtcNow.ToString("O")));
         }
         catch (Exception ex)
         {
-            RollBack(target.Path, written, backups, mod.Id, target.Key);
+            // Roll back only what THIS call created: delete newly-written files (not ones a prior
+            // install already owned), and restore only this call's backups.
+            var newWrites = written.Where(w => !priorInstalled.Contains(w.RelPath)).ToList();
+            RollBack(target.Path, newWrites, newBackups, mod.Id, target.Key);
             return new OpResult(false, target.Key, $"install failed: {ex.Message}");
         }
 
