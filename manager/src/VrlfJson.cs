@@ -7,4 +7,5 @@ namespace VrlfMods;
     WriteIndented = true,
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 [JsonSerializable(typeof(ModRegistry))]
+[JsonSerializable(typeof(Receipt))]
 public partial class VrlfJson : JsonSerializerContext { }
