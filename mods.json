@@ -9,7 +9,18 @@
     { "id": "hotd2", "name": "House of the Dead 2: Remake VRLF Mod",
       "version": "1.0", "zip": "mods/hotd2/dist/hotd2-v1.0.zip", "sha256": "684de9b130cd8c9d62877128fcce2ea5fd838c9d6311cfea1e99eaca75057b54",
       "games": [ { "appid": 3376690, "name": "THE HOUSE OF THE DEAD 2: Remake" } ],
-      "requiresVigembusForCoop": true, "notes": "co-op needs ViGEmBus for P2" },
+      "requiresVigembusForCoop": true, "notes": "co-op needs ViGEmBus for P2",
+      "config": {
+        "file": "BepInEx/config/com.vrlightgun.hod2inputlock.cfg", "format": "bepinex",
+        "toggles": [
+          { "section": "Visuals", "key": "ShowCrosshairs", "label": "Show crosshairs" },
+          { "section": "Aim", "key": "AbsoluteAim", "label": "Absolute aim (P1)" },
+          { "section": "Aim", "key": "ConfineCursor", "label": "Confine cursor to window" },
+          { "section": "Aim", "key": "InvertY", "label": "Invert Y (P1)" },
+          { "section": "Aim", "key": "PadAbsoluteAim", "label": "Absolute aim (P2 pad)" },
+          { "section": "General", "key": "VerboseLog", "label": "Verbose log" }
+        ]
+      } },
     { "id": "bbh", "name": "Big Buck Hunter Ultimate VRLF Mod",
       "version": "1.0.0", "zip": "mods/bbh/dist/bbh-v1.0.0.zip", "sha256": "0bf1188480844c07d782a81d288df3aa412653a9f5b39ed27fb1209785fa29f2",
       "games": [ { "appid": 3102290, "name": "Big Buck Hunter: Ultimate Trophy" } ],
@@ -19,10 +30,42 @@
       "games": [ { "appid": 305980, "name": "Heavy Fire: Afghanistan" },
                  { "appid": 385600, "name": "Heavy Fire: Shattered Spear" } ],
       "requiresVigembusForCoop": true,
-      "notes": "For co-op set PatchPlayerTable=true + PlayerCount=N in heavyfire_vrlf.cfg" },
+      "notes": "For co-op set PatchPlayerTable=true + PlayerCount=N in heavyfire_vrlf.cfg",
+      "config": {
+        "file": "heavyfire_vrlf.cfg", "format": "kv",
+        "toggles": [
+          { "key": "ShowCrosshair", "label": "Show crosshair" },
+          { "key": "HideGun", "label": "Hide first-person gun" },
+          { "key": "ReverseCover", "label": "Reverse cover lean" },
+          { "key": "VerboseLog", "label": "Verbose log" }
+        ]
+      } },
     { "id": "reload", "name": "Reload VRLF Mod",
       "version": "1.1.0", "zip": "mods/reload/dist/reload-v1.1.0.zip", "sha256": "44cee8635da356da86dfe4b043c31d9b9adb1d71da9dfc985f461081323d9a66",
       "games": [ { "appid": 330370, "name": "Reload" } ],
-      "requiresVigembusForCoop": false, "notes": "Launch the game with -windowed for capture" }
+      "requiresVigembusForCoop": false, "notes": "Launch the game with -windowed for capture",
+      "config": {
+        "file": "reload_vrlf.cfg", "format": "kv",
+        "toggles": [
+          { "key": "RemoveCrosshair", "label": "Hide crosshair" },
+          { "key": "HideWeapon", "label": "Hide weapon model" },
+          { "key": "AbsoluteAim", "label": "Absolute VR aim (bus)" },
+          { "key": "MenuCursorHook", "label": "Menu cursor 1:1" },
+          { "key": "VerboseLog", "label": "Verbose log" }
+        ]
+      } },
+    { "id": "blue-estate", "name": "Blue Estate VRLF Mod",
+      "version": "1.0.0", "zip": "mods/blue-estate/dist/blue-estate-v1.0.0.zip", "sha256": "d3fedbff58b7ffb43f0ac4644824ba3a19355d02ec335722d62c746819f4d85c",
+      "games": [ { "appid": 305380, "name": "Blue Estate" } ],
+      "requiresVigembusForCoop": true,
+      "notes": "2-gun co-op (P2 uses a ViGEmBus pad). Crosshair removal patches BEGame.upk (Steam build only, reversible).",
+      "config": {
+        "file": "Binaries/Win32/blue_estate_vrlf.cfg", "format": "kv",
+        "toggles": [
+          { "type": "patch", "patch": "blue-estate-nocrosshair",
+            "label": "Hide crosshair (patches BEGame.upk, reversible)",
+            "target": "BEGame/COOKEDPCCONSOLE/BEGame.upk" }
+        ]
+      } }
   ]
 }
