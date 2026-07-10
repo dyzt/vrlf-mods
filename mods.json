@@ -25,10 +25,23 @@
       "version": "1.0.0", "zip": "mods/bbh/dist/bbh-v1.0.0.zip", "sha256": "0bf1188480844c07d782a81d288df3aa412653a9f5b39ed27fb1209785fa29f2",
       "games": [ { "appid": 3102290, "name": "Big Buck Hunter: Ultimate Trophy" } ],
       "requiresVigembusForCoop": false, "notes": null },
-    { "id": "heavy-fire", "name": "Heavy Fire VRLF Mod",
+    { "id": "heavy-fire-afghanistan", "name": "Heavy Fire: Afghanistan VRLF Mod",
       "version": "1.0", "zip": "mods/heavy-fire/dist/heavy-fire-v1.0.zip", "sha256": "ddd8da872b294f043f3e525d8469a6e3b015790f4d6a1eb0d6d5b7880bb54287",
-      "games": [ { "appid": 305980, "name": "Heavy Fire: Afghanistan" },
-                 { "appid": 385600, "name": "Heavy Fire: Shattered Spear" } ],
+      "games": [ { "appid": 305980, "name": "Heavy Fire: Afghanistan" } ],
+      "requiresVigembusForCoop": true,
+      "notes": "For co-op set PatchPlayerTable=true + PlayerCount=N in heavyfire_vrlf.cfg",
+      "config": {
+        "file": "heavyfire_vrlf.cfg", "format": "kv",
+        "toggles": [
+          { "key": "ShowCrosshair", "label": "Show crosshair" },
+          { "key": "HideGun", "label": "Hide first-person gun" },
+          { "key": "ReverseCover", "label": "Reverse cover lean" },
+          { "key": "VerboseLog", "label": "Verbose log" }
+        ]
+      } },
+    { "id": "heavy-fire-shattered-spear", "name": "Heavy Fire: Shattered Spear VRLF Mod",
+      "version": "1.0", "zip": "mods/heavy-fire/dist/heavy-fire-v1.0.zip", "sha256": "ddd8da872b294f043f3e525d8469a6e3b015790f4d6a1eb0d6d5b7880bb54287",
+      "games": [ { "appid": 385600, "name": "Heavy Fire: Shattered Spear" } ],
       "requiresVigembusForCoop": true,
       "notes": "For co-op set PatchPlayerTable=true + PlayerCount=N in heavyfire_vrlf.cfg",
       "config": {
