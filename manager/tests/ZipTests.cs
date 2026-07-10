@@ -26,4 +26,18 @@ public class ZipTests
         var target = Path.Combine(Path.GetTempPath(), "game");
         Assert.Throws<InvalidDataException>(() => Zip.ResolveDest(target, @"..\..\Windows\evil.dll"));
     }
+
+    [Fact]
+    public void ResolveDest_rejects_drive_rooted_entry()
+    {
+        var target = Path.Combine(Path.GetTempPath(), "game");
+        Assert.Throws<InvalidDataException>(() => Zip.ResolveDest(target, @"C:\Windows\evil.dll"));
+    }
+
+    [Fact]
+    public void ResolveDest_rejects_sibling_directory_collision()
+    {
+        var target = Path.Combine(Path.GetTempPath(), "game");
+        Assert.Throws<InvalidDataException>(() => Zip.ResolveDest(target, @"..\gameEVIL\evil.dll"));
+    }
 }
