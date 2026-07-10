@@ -171,4 +171,45 @@ public class InstallerTests
         Assert.Equal("ORIGINAL", File.ReadAllText(Path.Combine(paths.BackupDir("demo", "1"), "winhttp.dll"))); // original safe
         Assert.NotEqual("ORIGINAL", File.ReadAllText(Path.Combine(game, "winhttp.dll")));                       // prior install NOT reverted to vanilla
     }
+
+    [Fact]
+    public async Task Uninstall_removes_files_and_restores_backup()
+    {
+        var paths = TempPaths();
+        var game = TempGameDir();
+        File.WriteAllText(Path.Combine(game, "winhttp.dll"), "ORIGINAL");
+        var zip = MakeZip((@"winhttp.dll", "MODDED"), (@"BepInEx\core\x.dll", "CORE"));
+        var mod = Mod(zip);
+        var http = new FakeHttpFetcher(new() { [RegistryLoader.ZipUrl(mod)] = zip });
+        var store = new ReceiptStore(paths);
+        var installer = new Installer(http, paths, store);
+        await installer.Install(mod, new GameTarget("1", game));
+
+        var res = installer.Uninstall(store.Load("demo", "1")!);
+
+        Assert.True(res.Ok, res.Message);
+        Assert.Equal("ORIGINAL", File.ReadAllText(Path.Combine(game, "winhttp.dll"))); // restored
+        Assert.False(Directory.Exists(Path.Combine(game, "BepInEx")));                 // pruned
+        Assert.Null(store.Load("demo", "1"));                                          // receipt gone
+    }
+
+    [Fact]
+    public async Task Uninstall_warns_on_user_modified_file_but_still_removes()
+    {
+        var paths = TempPaths();
+        var game = TempGameDir();
+        var zip = MakeZip((@"cfg.ini", "DEFAULT"));
+        var mod = Mod(zip);
+        var http = new FakeHttpFetcher(new() { [RegistryLoader.ZipUrl(mod)] = zip });
+        var store = new ReceiptStore(paths);
+        var installer = new Installer(http, paths, store);
+        await installer.Install(mod, new GameTarget("1", game));
+        File.WriteAllText(Path.Combine(game, "cfg.ini"), "USER EDITED");   // change after install
+
+        var res = installer.Uninstall(store.Load("demo", "1")!);
+
+        Assert.True(res.Ok);
+        Assert.Contains("modified", res.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.False(File.Exists(Path.Combine(game, "cfg.ini")));
+    }
 }

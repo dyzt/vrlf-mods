@@ -107,4 +107,55 @@ public sealed class Installer
             if (File.Exists(src)) { try { File.Copy(src, dst, overwrite: true); } catch { } }
         }
     }
+
+    public OpResult Uninstall(Receipt r)
+    {
+        var warnings = new List<string>();
+        foreach (var f in r.Files)
+        {
+            var p = System.IO.Path.Combine(r.GamePath, f.RelPath.Replace('/', System.IO.Path.DirectorySeparatorChar));
+            if (!File.Exists(p)) continue;
+            if (!string.Equals(Sha256HexFile(p), f.Sha256, StringComparison.OrdinalIgnoreCase))
+                warnings.Add(f.RelPath);
+            try { File.Delete(p); } catch (Exception ex) { return new OpResult(false, r.GameKey, $"could not delete {f.RelPath}: {ex.Message}"); }
+        }
+
+        var backupDir = _paths.BackupDir(r.ModId, r.GameKey);
+        foreach (var b in r.Backups)
+        {
+            var src = System.IO.Path.Combine(backupDir, b.RelPath.Replace('/', System.IO.Path.DirectorySeparatorChar));
+            var dst = System.IO.Path.Combine(r.GamePath, b.RelPath.Replace('/', System.IO.Path.DirectorySeparatorChar));
+            if (File.Exists(src)) { Directory.CreateDirectory(System.IO.Path.GetDirectoryName(dst)!); File.Copy(src, dst, overwrite: true); }
+        }
+        if (Directory.Exists(backupDir)) { try { Directory.Delete(backupDir, recursive: true); } catch { } }
+
+        PruneEmptyDirs(r.GamePath, r.Files);
+        _receipts.Delete(r.ModId, r.GameKey);
+
+        var msg = $"uninstalled {r.ModId} ({r.Files.Count} files)";
+        if (warnings.Count > 0)
+            msg += $"; warning: {warnings.Count} file(s) had been modified since install and were removed: {string.Join(", ", warnings)}";
+        return new OpResult(true, r.GameKey, msg);
+    }
+
+    private static void PruneEmptyDirs(string gamePath, List<InstalledFile> files)
+    {
+        // Deepest-first, so parents empty out after children.
+        var dirs = files
+            .Select(f => System.IO.Path.GetDirectoryName(
+                System.IO.Path.Combine(gamePath, f.RelPath.Replace('/', System.IO.Path.DirectorySeparatorChar))))!
+            .Where(d => d.Length > gamePath.Length)
+            .Distinct()
+            .OrderByDescending(d => d.Length);
+        foreach (var d in dirs)
+        {
+            var cur = d;
+            while (cur.Length > gamePath.Length && Directory.Exists(cur)
+                   && !Directory.EnumerateFileSystemEntries(cur).Any())
+            {
+                try { Directory.Delete(cur); } catch { break; }
+                cur = System.IO.Path.GetDirectoryName(cur)!;
+            }
+        }
+    }
 }
