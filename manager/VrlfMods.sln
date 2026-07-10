@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VrlfMods", "src\VrlfMods.csproj", "{07933A53-3B13-409F-B039-A4EF11194EC8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VrlfMods.Tests", "tests\VrlfMods.Tests.csproj", "{F556E60B-A92A-4F5A-92CD-8A6F22CFDA6E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{07933A53-3B13-409F-B039-A4EF11194EC8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{07933A53-3B13-409F-B039-A4EF11194EC8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{07933A53-3B13-409F-B039-A4EF11194EC8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{07933A53-3B13-409F-B039-A4EF11194EC8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F556E60B-A92A-4F5A-92CD-8A6F22CFDA6E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F556E60B-A92A-4F5A-92CD-8A6F22CFDA6E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F556E60B-A92A-4F5A-92CD-8A6F22CFDA6E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F556E60B-A92A-4F5A-92CD-8A6F22CFDA6E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
