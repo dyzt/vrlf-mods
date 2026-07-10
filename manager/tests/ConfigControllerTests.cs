@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using Xunit;
 
 namespace VrlfMods.Tests;
@@ -50,5 +51,31 @@ public class ConfigControllerTests
         var (mm, _, store) = BuildInstalled(paths);
         store.Delete("demo", "1");
         Assert.Null(await mm.GetConfig("demo", "1"));
+    }
+
+    [Fact] public async Task Dispatch_config_json_emits_toggles_object()
+    {
+        var paths = TempPaths();
+        var (mm, _, _) = BuildInstalled(paths);
+        var orig = Console.Out; var sw = new StringWriter(); Console.SetOut(sw);
+        int code;
+        try { code = await Program.Run(Cli.Parse(new[] { "config", "demo", "--json" }), mm); }
+        finally { Console.SetOut(orig); }
+        Assert.Equal(0, code);
+        using var doc = JsonDocument.Parse(sw.ToString());
+        Assert.True(doc.RootElement.TryGetProperty("toggles", out var toggles));
+        Assert.Equal(1, toggles.GetArrayLength());
+    }
+
+    [Fact] public async Task Dispatch_config_set_flips_and_exits_0()
+    {
+        var paths = TempPaths();
+        var (mm, game, _) = BuildInstalled(paths);
+        var orig = Console.Out; var sw = new StringWriter(); Console.SetOut(sw);
+        int code;
+        try { code = await Program.Run(Cli.Parse(new[] { "config", "demo", "set", "HideThing", "off" }), mm); }
+        finally { Console.SetOut(orig); }
+        Assert.Equal(0, code);
+        Assert.Contains("HideThing=false", File.ReadAllText(Path.Combine(game, "demo.cfg")));
     }
 }

@@ -1,6 +1,7 @@
 namespace VrlfMods;
 
-public record ParsedArgs(string Command, string? Id, long? Appid, string? Path, bool Json, string? Error);
+public record ParsedArgs(string Command, string? Id, long? Appid, string? Path, bool Json, string? Error,
+    string? Sub = null, string? Value = null, bool FlagOn = false);
 
 public static class Cli
 {
@@ -11,7 +12,8 @@ public static class Cli
         if (args.Length == 0) return new("menu", null, null, null, false, null);
 
         var cmd = args[0].ToLowerInvariant();
-        string? id = null, path = null; long? appid = null; bool json = false;
+        string? path = null; long? appid = null; bool json = false;
+        var pos = new List<string>();
 
         for (int i = 1; i < args.Length; i++)
         {
@@ -27,14 +29,34 @@ public static class Cli
                     path = args[++i]; break;
                 default:
                     if (args[i].StartsWith('-')) return Err(cmd, $"unknown option {args[i]}");
-                    id ??= args[i]; break;
+                    pos.Add(args[i]); break;
             }
         }
 
-        var known = new[] { "list", "status", "install", "uninstall", "update", "vigembus", "menu" };
+        var known = new[] { "list", "status", "install", "uninstall", "update", "vigembus", "menu", "config" };
         if (!known.Contains(cmd)) return Err(cmd, $"unknown command '{cmd}'");
+
+        string? id = pos.Count > 0 ? pos[0] : null;
+        string? sub = null, value = null; bool flagOn = false;
+
+        if (cmd == "config")
+        {
+            if (id is null) return Err(cmd, "config needs a mod id");
+            if (pos.Count > 1)
+            {
+                if (!string.Equals(pos[1], "set", StringComparison.OrdinalIgnoreCase))
+                    return Err(cmd, $"unknown config subcommand '{pos[1]}'");
+                sub = "set";
+                if (pos.Count < 4) return Err(cmd, "usage: config <id> set <option> <on|off>");
+                value = pos[2];
+                var f = pos[3].ToLowerInvariant();
+                if (f != "on" && f != "off") return Err(cmd, "config set needs on or off");
+                flagOn = f == "on";
+            }
+        }
+
         if (NeedId.Contains(cmd) && id is null) return Err(cmd, $"{cmd} needs a mod id");
-        return new(cmd, id, appid, path, json, null);
+        return new(cmd, id, appid, path, json, null, sub, value, flagOn);
     }
 
     private static ParsedArgs Err(string cmd, string msg) => new(cmd, null, null, null, false, msg);

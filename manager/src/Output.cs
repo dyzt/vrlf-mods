@@ -27,4 +27,11 @@ public static class Output
         foreach (var res in r.Results)
             Console.WriteLine($"  [{(res.Ok ? "ok" : "FAIL")}] {res.Message}");
     }
+
+    public static void ConfigText(ModConfig c)
+    {
+        Console.WriteLine($"{c.ModId} config ({c.Toggles.Count} options):");
+        foreach (var t in c.Toggles)
+            Console.WriteLine($"  [{(t.On ? "x" : " ")}] {t.Key,-20} {t.Label}{(t.Available ? "" : $"  ({t.Note})")}");
+    }
 }

@@ -39,4 +39,27 @@ public class ArgParseTests
         var p = Cli.Parse(new[] { "install", "x", "--game", "notanumber" });
         Assert.NotNull(p.Error);
     }
+
+    [Fact]
+    public void Parses_config_list_and_set()
+    {
+        var a = Cli.Parse(new[] { "config", "reload" });
+        Assert.Equal("config", a.Command);
+        Assert.Equal("reload", a.Id);
+        Assert.Null(a.Sub);
+
+        var b = Cli.Parse(new[] { "config", "reload", "set", "HideWeapon", "off", "--game", "330370" });
+        Assert.Equal("set", b.Sub);
+        Assert.Equal("HideWeapon", b.Value);
+        Assert.False(b.FlagOn);
+        Assert.Equal(330370, b.Appid);
+    }
+
+    [Fact]
+    public void Config_set_requires_on_or_off()
+        => Assert.NotNull(Cli.Parse(new[] { "config", "reload", "set", "K", "maybe" }).Error);
+
+    [Fact]
+    public void Config_without_id_is_an_error()
+        => Assert.NotNull(Cli.Parse(new[] { "config" }).Error);
 }
