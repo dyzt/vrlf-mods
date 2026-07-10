@@ -21,15 +21,27 @@ public sealed class Installer
     public static string Sha256HexFile(string path) =>
         Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
 
-    public async Task<OpResult> Install(ModEntry mod, GameTarget target)
+    public async Task<(byte[]? bytes, string? error)> FetchAndVerify(ModEntry mod)
     {
         var bytes = await _http.TryGet(RegistryLoader.ZipUrl(mod));
         if (bytes is null)
-            return new OpResult(false, target.Key, $"download failed for {mod.Zip} (network required)");
-
+            return (null, $"download failed for {mod.Zip} (network required)");
         if (!string.Equals(Sha256Hex(bytes), mod.Sha256, StringComparison.OrdinalIgnoreCase))
-            return new OpResult(false, target.Key,
-                $"sha256 mismatch for {mod.Id} — registry says {mod.Sha256}, got {Sha256Hex(bytes)}");
+            return (null, $"sha256 mismatch for {mod.Id} — registry says {mod.Sha256}, got {Sha256Hex(bytes)}");
+        return (bytes, null);
+    }
+
+    public async Task<OpResult> Install(ModEntry mod, GameTarget target, byte[]? prefetched = null)
+    {
+        byte[] bytes;
+        if (prefetched is not null)
+            bytes = prefetched;
+        else
+        {
+            var (fetched, error) = await FetchAndVerify(mod);
+            if (fetched is null) return new OpResult(false, target.Key, error!);
+            bytes = fetched;
+        }
 
         // A prior receipt means this mod is already installed here. Don't re-back-up files we
         // ourselves installed (that would capture our modded file as the "original"), and don't
@@ -152,6 +164,12 @@ public sealed class Installer
         if (string.Equals(mod.Version, current.Version, StringComparison.OrdinalIgnoreCase))
             return new OpResult(true, current.GameKey, $"{mod.Id} is up to date (v{mod.Version})");
 
+        // Verify the new artifact is in hand BEFORE mutating installed state, so a failed
+        // download/verify leaves the working version intact instead of removing it.
+        var (bytes, error) = await FetchAndVerify(mod);
+        if (bytes is null)
+            return new OpResult(false, current.GameKey, $"update aborted, kept v{current.Version}: {error}");
+
         var preserved = new List<string>();
         foreach (var f in current.Files)
         {
@@ -166,7 +184,7 @@ public sealed class Installer
 
         var un = Uninstall(current);
         if (!un.Ok) return un;
-        var inst = await Install(mod, new GameTarget(current.GameKey, current.GamePath));
+        var inst = await Install(mod, new GameTarget(current.GameKey, current.GamePath), bytes);
         if (!inst.Ok) return inst;
 
         var msg = $"updated {mod.Id} {current.Version} → {mod.Version}";

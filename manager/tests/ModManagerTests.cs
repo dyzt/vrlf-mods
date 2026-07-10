@@ -1,5 +1,7 @@
+using System.IO;
 using System.IO.Compression;
 using System.Text;
+using System.Text.Json;
 using Xunit;
 
 namespace VrlfMods.Tests;
@@ -78,5 +80,71 @@ public class ModManagerTests
         var (mm, _, _, _) = Build(paths, out _);
         var act = await mm.Install("nope", null, null);
         Assert.False(act.Ok);
+    }
+
+    [Fact]
+    public async Task Facade_uninstall_after_install_removes_files_and_receipt()
+    {
+        var paths = TempPaths();
+        var (mm, game, store, _) = Build(paths, out _);
+        await mm.Install("demo", null, null);
+        var act = await mm.Uninstall("demo", null);
+        Assert.True(act.Ok, act.Results.Count > 0 ? act.Results[0].Message : "");
+        Assert.False(File.Exists(Path.Combine(game, "m.dll")));
+        Assert.Null(store.Load("demo", "1"));
+    }
+
+    [Fact]
+    public async Task Facade_status_reflects_installed_version()
+    {
+        var paths = TempPaths();
+        var (mm, _, _, _) = Build(paths, out _);
+        await mm.Install("demo", null, null);
+        var st = await mm.Status("demo");
+        Assert.NotNull(st);
+        Assert.Equal("1.0", st!.InstalledVersion);
+    }
+
+    [Fact]
+    public async Task Facade_update_is_noop_when_registry_matches_installed()
+    {
+        var paths = TempPaths();
+        var (mm, _, _, _) = Build(paths, out _);
+        await mm.Install("demo", null, null);
+        var act = await mm.Update("demo");
+        Assert.True(act.Ok);
+        Assert.Contains(act.Results, r => r.Message.Contains("up to date"));
+    }
+
+    [Fact]
+    public async Task Dispatch_list_json_emits_single_object_and_exit_0()
+    {
+        var paths = TempPaths();
+        var (mm, _, _, _) = Build(paths, out _);
+        var orig = Console.Out;
+        var sw = new StringWriter();
+        Console.SetOut(sw);
+        int code;
+        try { code = await Program.Run(Cli.Parse(new[] { "list", "--json" }), mm); }
+        finally { Console.SetOut(orig); }
+        Assert.Equal(0, code);
+        using var doc = JsonDocument.Parse(sw.ToString());        // one parseable object
+        Assert.True(doc.RootElement.TryGetProperty("registrySource", out _));
+    }
+
+    [Fact]
+    public async Task Dispatch_status_unknown_json_returns_1_with_error_object()
+    {
+        var paths = TempPaths();
+        var (mm, _, _, _) = Build(paths, out _);
+        var orig = Console.Out;
+        var sw = new StringWriter();
+        Console.SetOut(sw);
+        int code;
+        try { code = await Program.Run(Cli.Parse(new[] { "status", "nope", "--json" }), mm); }
+        finally { Console.SetOut(orig); }
+        Assert.Equal(1, code);
+        using var doc = JsonDocument.Parse(sw.ToString());
+        Assert.False(doc.RootElement.GetProperty("ok").GetBoolean());
     }
 }

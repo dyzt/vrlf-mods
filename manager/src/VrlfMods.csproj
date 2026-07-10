@@ -15,4 +15,7 @@
   <ItemGroup>
     <EmbeddedResource Include="..\..\mods.json" LogicalName="mods.json" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="VrlfMods.Tests" />
+  </ItemGroup>
 </Project>

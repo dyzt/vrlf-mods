@@ -255,4 +255,26 @@ public class InstallerTests
         Assert.Contains("cfg.ini.bak-1.0", res.Message);
         Assert.Equal("2.0", store.Load("demo", "1")!.Version);             // receipt bumped
     }
+
+    [Fact]
+    public async Task Update_aborts_and_keeps_old_version_when_new_zip_unavailable()
+    {
+        var paths = TempPaths();
+        var game = TempGameDir();
+        var v1 = MakeZip((@"a.dll", "A1"));
+        var mod1 = Mod(v1, "1.0");
+        var store = new ReceiptStore(paths);
+        await new Installer(new FakeHttpFetcher(new() { [RegistryLoader.ZipUrl(mod1)] = v1 }), paths, store)
+            .Install(mod1, new GameTarget("1", game));
+
+        // v2 in the registry, but the fetcher has NO mapping for its zip → download fails
+        var v2 = MakeZip((@"a.dll", "A2"));
+        var mod2 = Mod(v2, "2.0");
+        var res = await new Installer(new FakeHttpFetcher(new()), paths, store)
+            .Update(mod2, store.Load("demo", "1")!);
+
+        Assert.False(res.Ok);
+        Assert.Equal("A1", File.ReadAllText(Path.Combine(game, "a.dll")));  // old version intact
+        Assert.Equal("1.0", store.Load("demo", "1")!.Version);             // receipt unchanged
+    }
 }

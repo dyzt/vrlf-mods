@@ -1,3 +1,5 @@
+using System.IO;
+
 namespace VrlfMods;
 
 public record GameStatus(long Appid, string Name, bool Detected, string? Path, bool Installed, string? InstalledVersion);
@@ -111,10 +113,21 @@ public sealed class ModManager
         if (path is not null)
         {
             var full = System.IO.Path.GetFullPath(path);
+            if (!Directory.Exists(full))
+            {
+                problems.Add(new OpResult(false, AppPaths.GameKeyForPath(full), $"path not found: {full}"));
+                return new();
+            }
             return new() { new GameTarget(AppPaths.GameKeyForPath(full), full) };
         }
 
         var games = appid is null ? mod.Games : mod.Games.Where(g => g.Appid == appid.Value).ToList();
+        if (appid is not null && games.Count == 0)
+        {
+            problems.Add(new OpResult(false, AppPaths.GameKeyForAppid(appid.Value),
+                $"appid {appid.Value} is not a listed game for {mod.Id}"));
+            return new();
+        }
         var targets = new List<GameTarget>();
         foreach (var g in games)
         {

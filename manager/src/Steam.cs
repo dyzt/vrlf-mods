@@ -50,13 +50,18 @@ public class SteamLocator
         var libVdf = Path.Combine(root, "steamapps", "libraryfolders.vdf");
         var libs = new List<string> { root };
         if (File.Exists(libVdf))
-            libs.AddRange(SteamVdf.ParseLibraryFolders(File.ReadAllText(libVdf)));
+        {
+            try { libs.AddRange(SteamVdf.ParseLibraryFolders(File.ReadAllText(libVdf))); }
+            catch { /* unreadable library index — fall back to the root library only */ }
+        }
 
         foreach (var lib in libs.Distinct())
         {
             var acf = Path.Combine(lib, "steamapps", $"appmanifest_{appid}.acf");
             if (!File.Exists(acf)) continue;
-            var installDir = SteamVdf.ParseInstallDir(File.ReadAllText(acf));
+            string acfText;
+            try { acfText = File.ReadAllText(acf); } catch { continue; }
+            var installDir = SteamVdf.ParseInstallDir(acfText);
             if (string.IsNullOrEmpty(installDir)) continue;
             var gameDir = Path.Combine(lib, "steamapps", "common", installDir);
             if (Directory.Exists(gameDir)) return gameDir;
