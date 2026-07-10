@@ -1,4 +1,5 @@
 using System.IO;
+using VrlfMods.Patches;
 
 namespace VrlfMods;
 
@@ -14,10 +15,12 @@ public sealed class ModManager
     private readonly Installer _installer;
     private readonly ReceiptStore _receipts;
     private readonly Vigem _vigem;
+    private readonly ConfigController _config;
 
     public ModManager(RegistryLoader loader, SteamLocator steam, Installer installer,
-                      ReceiptStore receipts, Vigem vigem)
-    { _loader = loader; _steam = steam; _installer = installer; _receipts = receipts; _vigem = vigem; }
+                      ReceiptStore receipts, Vigem vigem, PatchRegistry? patches = null)
+    { _loader = loader; _steam = steam; _installer = installer; _receipts = receipts; _vigem = vigem;
+      _config = new ConfigController(patches ?? PatchRegistry.Default()); }
 
     public async Task<ListReport> List()
     {
@@ -30,6 +33,26 @@ public sealed class ModManager
         var (reg, _) = await _loader.Load();
         var mod = reg.Find(id);
         return mod is null ? null : StatusFor(mod);
+    }
+
+    public async Task<ModConfig?> GetConfig(string id, string gameKey)
+    {
+        var (reg, _) = await _loader.Load();
+        var mod = reg.Find(id);
+        if (mod?.Config is null) return null;
+        var rcpt = _receipts.Load(id, gameKey);
+        if (rcpt is null) return null;
+        return _config.Read(mod, gameKey, rcpt.GamePath);
+    }
+
+    public async Task<OpResult> SetToggle(string id, string gameKey, string toggleKey, bool on)
+    {
+        var (reg, _) = await _loader.Load();
+        var mod = reg.Find(id);
+        if (mod?.Config is null) return new OpResult(false, gameKey, $"{id} has no configurable options");
+        var rcpt = _receipts.Load(id, gameKey);
+        if (rcpt is null) return new OpResult(false, gameKey, $"{id} is not installed for game {gameKey}");
+        return _config.Set(mod, gameKey, rcpt.GamePath, toggleKey, on);
     }
 
     private ModStatus StatusFor(ModEntry mod)
@@ -79,6 +102,7 @@ public sealed class ModManager
         {
             var rcpt = _receipts.Load(mod.Id, key);
             if (rcpt is null) continue;
+            _config.RevertPatches(mod, key, rcpt.GamePath);   // return the game fully stock
             results.Add(_installer.Uninstall(rcpt));
         }
         if (results.Count == 0) return Fail("uninstall", $"{mod.Id} is not installed");
