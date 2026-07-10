@@ -79,6 +79,18 @@
             "label": "Hide crosshair (patches BEGame.upk, reversible)",
             "target": "BEGame/COOKEDPCCONSOLE/BEGame.upk" }
         ]
+      } },
+    { "id": "martian-panic", "name": "Martian Panic VRLF Mod",
+      "version": "1.0", "zip": "mods/martian-panic/dist/martian-panic-v1.0.zip", "sha256": "f171cba278190c2545696b4c61ef4d74758b304ef4aa8884a8addda88591f634",
+      "games": [ { "appid": 2343850, "name": "Martian Panic" } ],
+      "requiresVigembusForCoop": false,
+      "notes": "Crosshair-hide only; absolute mouse aim is already 1:1, so no aim mod is needed.",
+      "config": {
+        "file": "BepInEx/plugins/MartianPanicVrlf.cfg", "format": "kv",
+        "toggles": [
+          { "key": "HideCrosshair", "label": "Hide crosshair" },
+          { "key": "VerboseLog", "label": "Verbose log" }
+        ]
       } }
   ]
 }

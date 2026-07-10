@@ -41,17 +41,18 @@ public class RegistryTests
     }
 
     [Fact]
-    public void Embedded_catalog_parses_and_has_seven_mods()
+    public void Embedded_catalog_parses_and_has_eight_mods()
     {
         using var s = typeof(ModRegistry).Assembly.GetManifestResourceStream("mods.json")!;
         using var r = new StreamReader(s);
         var reg = JsonSerializer.Deserialize(r.ReadToEnd(), VrlfJson.Default.ModRegistry)!;
-        Assert.Equal(7, reg.Mods.Count);
+        Assert.Equal(8, reg.Mods.Count);
         // Heavy Fire is two single-game entries (Afghanistan + Shattered Spear).
         Assert.NotNull(reg.Find("heavy-fire-afghanistan"));
         Assert.NotNull(reg.Find("heavy-fire-shattered-spear"));
         Assert.Null(reg.Find("heavy-fire"));
         Assert.NotNull(reg.Find("blue-estate"));
+        Assert.NotNull(reg.Find("martian-panic"));
         // Blue Estate's crosshair toggle is a reversible native patch.
         var be = reg.Find("blue-estate")!;
         Assert.Equal("patch", be.Config!.Toggles.Single().Type);
