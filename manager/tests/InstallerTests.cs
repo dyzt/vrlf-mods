@@ -109,4 +109,43 @@ public class InstallerTests
         Assert.False(File.Exists(Path.Combine(Path.GetDirectoryName(game)!, "evil.dll")));
         Assert.Null(new ReceiptStore(paths).Load("demo", "1"));
     }
+
+    [Fact]
+    public async Task Repeat_install_preserves_the_original_backup()
+    {
+        var paths = TempPaths();
+        var game = TempGameDir();
+        File.WriteAllText(Path.Combine(game, "winhttp.dll"), "ORIGINAL");
+        var zip = MakeZip((@"winhttp.dll", "MODDED"));
+        var mod = Mod(zip);
+        var http = new FakeHttpFetcher(new() { [RegistryLoader.ZipUrl(mod)] = zip });
+        var store = new ReceiptStore(paths);
+        var installer = new Installer(http, paths, store);
+
+        await installer.Install(mod, new GameTarget("1", game));   // first
+        await installer.Install(mod, new GameTarget("1", game));   // repeat, no uninstall
+
+        var backup = Path.Combine(paths.BackupDir("demo", "1"), "winhttp.dll");
+        Assert.Equal("ORIGINAL", File.ReadAllText(backup));        // NOT overwritten with MODDED
+        Assert.Single(store.Load("demo", "1")!.Backups);           // still references the original
+    }
+
+    [Fact]
+    public async Task Receipt_save_failure_rolls_back_extracted_files()
+    {
+        var paths = TempPaths();
+        var game = TempGameDir();
+        var zip = MakeZip((@"a.dll", "A"));
+        var mod = Mod(zip);
+        var http = new FakeHttpFetcher(new() { [RegistryLoader.ZipUrl(mod)] = zip });
+        var store = new ReceiptStore(paths);
+        // Force ReceiptStore.Save to throw: pre-create a DIRECTORY where the receipt file must go.
+        Directory.CreateDirectory(paths.ReceiptPath("demo", "1"));
+        var installer = new Installer(http, paths, store);
+
+        var res = await installer.Install(mod, new GameTarget("1", game));
+
+        Assert.False(res.Ok);
+        Assert.False(File.Exists(Path.Combine(game, "a.dll")));    // rolled back
+    }
 }

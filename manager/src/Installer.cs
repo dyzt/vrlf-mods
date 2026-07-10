@@ -31,8 +31,14 @@ public sealed class Installer
             return new OpResult(false, target.Key,
                 $"sha256 mismatch for {mod.Id} — registry says {mod.Sha256}, got {Sha256Hex(bytes)}");
 
+        // Carry forward any prior install's original backups, and never re-back-up a file
+        // this same mod already installed (doing so would overwrite the saved original).
+        var prior = _receipts.Load(mod.Id, target.Key);
+        var priorInstalled = new HashSet<string>(
+            prior?.Files.Select(f => f.RelPath) ?? Enumerable.Empty<string>());
+
         var written = new List<InstalledFile>();
-        var backups = new List<BackupRef>();
+        var backups = new List<BackupRef>(prior?.Backups ?? Enumerable.Empty<BackupRef>());
         var backupDir = _paths.BackupDir(mod.Id, target.Key);
 
         try
@@ -42,12 +48,13 @@ public sealed class Installer
             {
                 if (entry.FullName.EndsWith('/') || entry.FullName.EndsWith('\\') || entry.Length == 0
                     && entry.Name.Length == 0)
-                    continue;   // directory entry
+                    continue;
                 var rel = Zip.NormalizeEntryName(entry.FullName);
                 if (rel.Length == 0) continue;
-                var dest = Zip.ResolveDest(target.Path, entry.FullName);  // throws on zip-slip
+                var dest = Zip.ResolveDest(target.Path, entry.FullName);
 
-                if (File.Exists(dest) && !written.Any(w => w.RelPath == rel))
+                if (File.Exists(dest) && !written.Any(w => w.RelPath == rel)
+                    && !priorInstalled.Contains(rel) && !backups.Any(b => b.RelPath == rel))
                 {
                     var backupPath = System.IO.Path.Combine(backupDir, rel.Replace('/', System.IO.Path.DirectorySeparatorChar));
                     Directory.CreateDirectory(System.IO.Path.GetDirectoryName(backupPath)!);
@@ -59,6 +66,11 @@ public sealed class Installer
                 entry.ExtractToFile(dest, overwrite: true);
                 written.Add(new InstalledFile(rel, Sha256HexFile(dest)));
             }
+
+            // Receipt written LAST, but INSIDE the try so a Save failure rolls back
+            // instead of stranding the extracted files.
+            _receipts.Save(new Receipt(mod.Id, mod.Version, target.Key, target.Path,
+                written, backups, DateTime.UtcNow.ToString("O")));
         }
         catch (Exception ex)
         {
@@ -66,8 +78,6 @@ public sealed class Installer
             return new OpResult(false, target.Key, $"install failed: {ex.Message}");
         }
 
-        _receipts.Save(new Receipt(mod.Id, mod.Version, target.Key, target.Path,
-            written, backups, DateTime.UtcNow.ToString("O")));
         return new OpResult(true, target.Key, $"installed {mod.Id} v{mod.Version} ({written.Count} files)");
     }
 
