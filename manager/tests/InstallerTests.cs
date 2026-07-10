@@ -212,4 +212,47 @@ public class InstallerTests
         Assert.Contains("modified", res.Message, StringComparison.OrdinalIgnoreCase);
         Assert.False(File.Exists(Path.Combine(game, "cfg.ini")));
     }
+
+    [Fact]
+    public async Task Update_noop_when_version_matches()
+    {
+        var paths = TempPaths();
+        var game = TempGameDir();
+        var zip = MakeZip((@"a.dll", "A"));
+        var mod = Mod(zip, "1.0");
+        var http = new FakeHttpFetcher(new() { [RegistryLoader.ZipUrl(mod)] = zip });
+        var store = new ReceiptStore(paths);
+        var installer = new Installer(http, paths, store);
+        await installer.Install(mod, new GameTarget("1", game));
+
+        var res = await installer.Update(mod, store.Load("demo", "1")!);
+        Assert.True(res.Ok);
+        Assert.Contains("up to date", res.Message);
+    }
+
+    [Fact]
+    public async Task Update_reinstalls_and_preserves_user_edits()
+    {
+        var paths = TempPaths();
+        var game = TempGameDir();
+        var v1 = MakeZip((@"a.dll", "A1"), (@"cfg.ini", "DEF"));
+        var mod1 = Mod(v1, "1.0");
+        var http1 = new FakeHttpFetcher(new() { [RegistryLoader.ZipUrl(mod1)] = v1 });
+        var store = new ReceiptStore(paths);
+        await new Installer(http1, paths, store).Install(mod1, new GameTarget("1", game));
+        File.WriteAllText(Path.Combine(game, "cfg.ini"), "USER");          // user edit
+
+        var v2 = MakeZip((@"a.dll", "A2"), (@"cfg.ini", "DEF"));
+        var mod2 = Mod(v2, "2.0");
+        var http2 = new FakeHttpFetcher(new() { [RegistryLoader.ZipUrl(mod2)] = v2 });
+        var installer2 = new Installer(http2, paths, store);
+
+        var res = await installer2.Update(mod2, store.Load("demo", "1")!);
+
+        Assert.True(res.Ok, res.Message);
+        Assert.Equal("A2", File.ReadAllText(Path.Combine(game, "a.dll")));  // upgraded
+        Assert.True(File.Exists(Path.Combine(game, "cfg.ini.bak-1.0")));    // user edit preserved
+        Assert.Contains("cfg.ini.bak-1.0", res.Message);
+        Assert.Equal("2.0", store.Load("demo", "1")!.Version);             // receipt bumped
+    }
 }

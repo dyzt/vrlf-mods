@@ -147,6 +147,34 @@ public sealed class Installer
         return new OpResult(true, r.GameKey, msg);
     }
 
+    public async Task<OpResult> Update(ModEntry mod, Receipt current)
+    {
+        if (string.Equals(mod.Version, current.Version, StringComparison.OrdinalIgnoreCase))
+            return new OpResult(true, current.GameKey, $"{mod.Id} is up to date (v{mod.Version})");
+
+        var preserved = new List<string>();
+        foreach (var f in current.Files)
+        {
+            var p = System.IO.Path.Combine(current.GamePath, f.RelPath.Replace('/', System.IO.Path.DirectorySeparatorChar));
+            if (File.Exists(p) && !string.Equals(Sha256HexFile(p), f.Sha256, StringComparison.OrdinalIgnoreCase))
+            {
+                var aside = p + $".bak-{current.Version}";
+                try { File.Copy(p, aside, overwrite: true); preserved.Add(f.RelPath + $".bak-{current.Version}"); }
+                catch { /* best effort */ }
+            }
+        }
+
+        var un = Uninstall(current);
+        if (!un.Ok) return un;
+        var inst = await Install(mod, new GameTarget(current.GameKey, current.GamePath));
+        if (!inst.Ok) return inst;
+
+        var msg = $"updated {mod.Id} {current.Version} → {mod.Version}";
+        if (preserved.Count > 0)
+            msg += $"; kept your modified file(s) as: {string.Join(", ", preserved)}";
+        return new OpResult(true, current.GameKey, msg);
+    }
+
     private static void PruneEmptyDirs(string gamePath, List<InstalledFile> files)
     {
         // Deepest-first, so parents empty out after their children are removed.
