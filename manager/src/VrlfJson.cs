@@ -7,6 +7,8 @@ namespace VrlfMods;
     WriteIndented = true,
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 [JsonSerializable(typeof(ModRegistry))]
+[JsonSerializable(typeof(ConfigManifest))]
+[JsonSerializable(typeof(ConfigToggle))]
 [JsonSerializable(typeof(Receipt))]
 [JsonSerializable(typeof(ListReport))]
 [JsonSerializable(typeof(ModStatus))]
