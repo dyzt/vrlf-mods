@@ -61,14 +61,17 @@ public static class TuiModel
 
     static int NextSelectable(List<MenuRow> rows, int from, int dir)
     {
-        int i = from;
+        if (rows.Count == 0) return 0;
+        // Clamp a stale cursor (rows can shrink after an action) so arrows always recover.
+        int start = Math.Clamp(from, 0, rows.Count - 1);
+        int i = start;
         for (int step = 0; step < rows.Count; step++)
         {
             i += dir;
-            if (i < 0 || i >= rows.Count) return from;   // clamp at ends
+            if (i < 0 || i >= rows.Count) return start;   // clamp at ends
             if (rows[i].Selectable) return i;
         }
-        return from;
+        return start;
     }
 
     public static (TuiState, TuiAction) Reduce(TuiState s, TuiKey key, List<MenuRow> rows)

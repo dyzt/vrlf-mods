@@ -102,8 +102,11 @@ public sealed class ModManager
         {
             var rcpt = _receipts.Load(mod.Id, key);
             if (rcpt is null) continue;
-            _config.RevertPatches(mod, key, rcpt.GamePath);   // return the game fully stock
-            results.Add(_installer.Uninstall(rcpt));
+            var patchWarnings = _config.RevertPatches(mod, key, rcpt.GamePath);   // return the game fully stock
+            var un = _installer.Uninstall(rcpt);
+            if (patchWarnings.Count > 0 && un.Ok)
+                un = un with { Message = un.Message + "; warning: " + string.Join("; ", patchWarnings) };
+            results.Add(un);
         }
         if (results.Count == 0) return Fail("uninstall", $"{mod.Id} is not installed");
         return new ActionReport(results.All(r => r.Ok), "uninstall", results);

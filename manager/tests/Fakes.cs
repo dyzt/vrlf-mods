@@ -48,3 +48,17 @@ public sealed class SteamLocatorStub : VrlfMods.SteamLocator
     { _appid = appid; _dir = dir; }
     public override string? FindGameDir(long appid) => appid == _appid ? _dir : null;
 }
+
+public sealed class FakePatch : VrlfMods.Patches.IReversiblePatch
+{
+    private readonly VrlfMods.Patches.PatchState _state;
+    private readonly bool _revertOk;
+    public int Reverts { get; private set; }
+    public FakePatch(VrlfMods.Patches.PatchState state, bool revertOk = true, string name = "fake-patch")
+    { _state = state; _revertOk = revertOk; Name = name; }
+    public string Name { get; }
+    public VrlfMods.Patches.PatchState Detect(string p) => _state;
+    public VrlfMods.OpResult Apply(string p, string k) => new(true, k, "applied");
+    public VrlfMods.OpResult Revert(string p, string k)
+    { Reverts++; return new(_revertOk, k, _revertOk ? "reverted" : "no .vrlf-backup found"); }
+}

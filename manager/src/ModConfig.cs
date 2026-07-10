@@ -56,7 +56,8 @@ public sealed class ConfigController
             var target = Path.Combine(gameDir, t.Target!.Replace('/', Path.DirectorySeparatorChar));
             var p = _patches.Get(t.Patch!);
             if (p is null) return new OpResult(false, gameKey, $"unknown patch '{t.Patch}'");
-            return on ? p.Apply(target, gameKey) : p.Revert(target, gameKey);
+            try { return on ? p.Apply(target, gameKey) : p.Revert(target, gameKey); }
+            catch (Exception ex) { return new OpResult(false, gameKey, $"patch failed: {ex.Message}"); }
         }
         var file = Path.Combine(gameDir, mod.Config.File!.Replace('/', Path.DirectorySeparatorChar));
         if (!File.Exists(file)) return new OpResult(false, gameKey, $"config not found: {mod.Config.File}");
@@ -65,17 +66,24 @@ public sealed class ConfigController
         return new OpResult(true, gameKey, $"{t.Label} = {(on ? "on" : "off")} (applies next launch)");
     }
 
-    // Revert every reversible patch this mod declares (best-effort) — used on uninstall
-    // so the game returns fully stock.
-    public void RevertPatches(ModEntry mod, string gameKey, string gameDir)
+    // Revert every reversible patch this mod declares — used on uninstall so the game
+    // returns fully stock. Returns any warnings (e.g. a missing backup) for the caller to
+    // surface, rather than silently leaving a patched game file behind.
+    public List<string> RevertPatches(ModEntry mod, string gameKey, string gameDir)
     {
-        if (mod.Config is null) return;
+        var warnings = new List<string>();
+        if (mod.Config is null) return warnings;
         foreach (var t in mod.Config.Toggles.Where(x => x.Type == "patch"))
         {
             var p = _patches.Get(t.Patch!);
             if (p is null) continue;
             var target = Path.Combine(gameDir, t.Target!.Replace('/', Path.DirectorySeparatorChar));
-            if (p.Detect(target) == PatchState.On) { try { p.Revert(target, gameKey); } catch { } }
+            if (p.Detect(target) != PatchState.On) continue;
+            OpResult r;
+            try { r = p.Revert(target, gameKey); }
+            catch (Exception ex) { r = new OpResult(false, gameKey, ex.Message); }
+            if (!r.Ok) warnings.Add(r.Message);
         }
+        return warnings;
     }
 }

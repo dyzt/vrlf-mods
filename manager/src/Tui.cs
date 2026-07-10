@@ -26,6 +26,8 @@ public static class Tui
             var (next, action) = TuiModel.Reduce(state, key, rows);
             state = next;
 
+            try
+            {
             switch (action.Kind)
             {
                 case ActionKind.Quit:
@@ -69,6 +71,8 @@ public static class Tui
                     cfg = await LoadConfig(mm, list, action.ModId!);
                     break;
             }
+            }
+            catch (Exception ex) { message = "error: " + ex.Message; }   // an action must never crash the loop
         }
     }
 
