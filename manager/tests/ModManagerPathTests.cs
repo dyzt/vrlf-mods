@@ -1,68 +1,12 @@
 using System.IO;
-using System.IO.Compression;
-using System.Text;
 using Xunit;
+using static VrlfMods.Tests.DemoManager;
 
 namespace VrlfMods.Tests;
 
 /// <summary>The manual game-path override, end to end through ModManager.</summary>
 public class ModManagerPathTests
 {
-    const long Appid = 1;
-
-    static AppPaths TempPaths() =>
-        new(Path.Combine(Path.GetTempPath(), "vrlf-mmp-" + Guid.NewGuid().ToString("N")));
-
-    static string RealDir(string? withFile = null)
-    {
-        var d = Path.Combine(Path.GetTempPath(), "vrlf-mmpdir-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(d);
-        if (withFile is not null) File.WriteAllText(Path.Combine(d, withFile), "x");
-        return d;
-    }
-
-    static string MissingDir() =>
-        Path.Combine(Path.GetTempPath(), "vrlf-mmpgone-" + Guid.NewGuid().ToString("N"));
-
-    static byte[] MakeZip(string name, string content)
-    {
-        using var ms = new MemoryStream();
-        using (var zip = new ZipArchive(ms, ZipArchiveMode.Create, leaveOpen: true))
-        { using var w = new StreamWriter(zip.CreateEntry(name).Open()); w.Write(content); }
-        return ms.ToArray();
-    }
-
-    // A one-mod manager whose Steam library holds appid 1 at `steamDir` (pass null for
-    // "Steam knows nothing about it").
-    static (ModManager mm, ReceiptStore receipts, GamePathStore overrides) Build(
-        AppPaths paths, string? steamDir = null)
-    {
-        var zip = MakeZip("m.dll", "M");
-        var hash = Installer.Sha256Hex(zip);
-        var mod = new ModEntry("demo", "Demo", "1.0", "mods/demo/dist/demo.zip", hash,
-            new() { new GameRef(Appid, "Demo Game") }, false, null);
-        var regJson =
-            "{ \"schema\":1, \"vigembus\":{\"repo\":\"nefarius/ViGEmBus\",\"version\":\"v1.22.0\"}, \"mods\":[" +
-            "{ \"id\":\"demo\",\"name\":\"Demo\",\"version\":\"1.0\",\"zip\":\"mods/demo/dist/demo.zip\"," +
-            "\"sha256\":\"" + hash + "\",\"games\":[{\"appid\":1,\"name\":\"Demo Game\"}]," +
-            "\"requiresVigembusForCoop\":false,\"notes\":null } ] }";
-        var http = new FakeHttpFetcher(new()
-        {
-            [RegistryLoader.RawBase + "/mods.json"] = Encoding.UTF8.GetBytes(regJson),
-            [RegistryLoader.ZipUrl(mod)] = zip,
-        });
-        var receipts = new ReceiptStore(paths);
-        var overrides = new GamePathStore(paths);
-        // The real SteamLocator only ever returns a directory that exists, so "Steam knows
-        // nothing" is modelled by a stub that answers for a different appid entirely.
-        var locator = new GameLocator(
-            new SteamLocatorStub(steamDir is null ? -1 : Appid, steamDir ?? string.Empty), overrides);
-        var mm = new ModManager(new RegistryLoader(http, paths), locator,
-            new Installer(http, paths, receipts), receipts,
-            new Vigem(new FakeServiceDetector(true), http, new FakeLauncher(), paths));
-        return (mm, receipts, overrides);
-    }
-
     static string Messages(ActionReport r) => string.Join(" ", r.Results.Select(x => x.Message));
 
     [Fact]

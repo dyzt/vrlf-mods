@@ -22,6 +22,16 @@ public static class Output
         }
     }
 
+    /// <summary>Reads back where a game lives and who chose that folder.</summary>
+    public static string GamePathText(GameStatus g)
+    {
+        if (g.Detected)
+            return $"{g.Name}: {g.Path}  ({(g.Manual ? "folder you chose" : "found via Steam")})";
+        if (g.Manual)
+            return $"{g.Name}: {g.Path}  — the folder you chose is no longer there";
+        return $"{g.Name}: not found — point at it with:  vrlf-mods path <id> <game dir>";
+    }
+
     public static void ActionText(ActionReport r)
     {
         foreach (var res in r.Results)

@@ -53,6 +53,7 @@ internal static class Program
                 case "update":    return Report(await mm.Update(p.Id), p.Json);
                 case "vigembus":  return Report(await mm.EnsureVigem(), p.Json);
                 case "config":    return await Config(p, mm);
+                case "path":      return await GamePath(p, mm);
                 default: Console.Error.WriteLine("error: unknown command"); return 1;
             }
         }
@@ -65,6 +66,21 @@ internal static class Program
                 Console.Error.WriteLine("error: " + ex.Message);
             return 1;
         }
+    }
+
+    // path <id>            — show which folder we are using, and who chose it
+    // path <id> <dir>      — point the manager at a game Steam can't find (or a second copy)
+    // path <id> --clear    — forget it and go back to Steam detection
+    private static async Task<int> GamePath(ParsedArgs p, ModManager mm)
+    {
+        if (p.Clear) return Report(await mm.ClearGamePath(p.Id!, p.Appid), p.Json);
+        if (p.Path is not null) return Report(await mm.SetGamePath(p.Id!, p.Appid, p.Path), p.Json);
+
+        var g = await mm.GamePath(p.Id!, p.Appid);
+        if (g is null) return Fail("path", "", $"unknown mod id '{p.Id}'", p.Json);
+        if (p.Json) Output.Json(g, VrlfJson.Default.GameStatus);
+        else Console.WriteLine(Output.GamePathText(g));
+        return 0;
     }
 
     private static int Report(ActionReport r, bool json)
