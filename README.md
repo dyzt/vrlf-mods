@@ -6,8 +6,9 @@ This repository is the single public home for:
 
 - **`manager/`** — `vrlf-mods.exe`, a .NET 8 CLI that installs/uninstalls/updates the
   companion mods below. It ships inside the VRLF Steam depot; run it to make a supported
-  game VR-lightgun ready. It finds each game via Steam automatically, with `--path <dir>`
-  as a manual fallback. See [`docs/vrlf-mod-manager.md`](../VR%20Lightgun%20Framework/docs/vrlf-mod-manager.md)
+  game VR-lightgun ready. It finds each game via Steam automatically;
+  `vrlf-mods path <id> <dir>` (or the menu's **Game folder** row) points it at a copy Steam
+  cannot see, and remembers it. See [`docs/vrlf-mod-manager.md`](../VR%20Lightgun%20Framework/docs/vrlf-mod-manager.md)
   in the framework repo for the command reference and rollout runbook.
 - **`mods/<id>/`** — one folder per companion mod: the mod's source plus its built
   distribution zip under `dist/`.
