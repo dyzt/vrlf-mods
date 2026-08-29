@@ -3,7 +3,8 @@ namespace VrlfMods;
 public enum Screen { List, Mod }
 public enum RowKind { Header, Action, Toggle, Separator, Info }
 public enum TuiKey { Up, Down, Enter, Back, Quit, Refresh, Other }
-public enum ActionKind { None, Open, Back, Quit, Install, Reinstall, Uninstall, Update, Vigem, Refresh, Toggle }
+public enum ActionKind { None, Open, Back, Quit, Install, Reinstall, Uninstall, Update, Vigem, Refresh,
+                         Toggle, SetPath, ClearPath }
 
 public record MenuRow(RowKind Kind, string Text, ActionKind Action = ActionKind.None,
     string? ModId = null, string? ToggleKey = null, bool? ToggleOn = null, long? Appid = null,
@@ -61,6 +62,17 @@ public static class TuiModel
         return rows;
     }
 
+    /// <summary>The mod screen's game-folder row: where we will install, and who chose it.</summary>
+    public static string GameFolderText(GameStatus g, bool nameTheGame)
+    {
+        var lead = nameTheGame ? g.Name : "Game folder";
+        if (g.Detected)
+            return $"{lead}: {g.Path}  ({(g.Manual ? "you chose this" : "found via Steam")})";
+        if (g.Manual)
+            return $"{lead}: {g.Path}  — no longer there, Enter to fix";
+        return $"{lead}: not found — Enter to choose it";
+    }
+
     public static List<MenuRow> ModRows(ModStatus m, ModConfig? cfg)
     {
         var rows = new List<MenuRow>();
@@ -73,6 +85,22 @@ public static class TuiModel
             rows.Add(new(RowKind.Action, "Reinstall", ActionKind.Reinstall, ModId: m.Id));
             rows.Add(new(RowKind.Action, "Uninstall", ActionKind.Uninstall, ModId: m.Id));
         }
+        // Where this mod will be installed, and the way out when Steam can't find the game:
+        // without this row that screen offers a non-Steam owner nothing at all.
+        if (rows.Count > 0) rows.Add(new(RowKind.Separator, "", Selectable: false));
+        bool nameTheGame = m.Games.Count > 1;
+        foreach (var g in m.Games)
+        {
+            rows.Add(new(RowKind.Action, GameFolderText(g, nameTheGame), ActionKind.SetPath,
+                ModId: m.Id, Appid: g.Appid,
+                Help: "Point the manager at your copy of this game — a non-Steam install, or one Steam can't find."));
+            if (g.Manual)
+                rows.Add(new(RowKind.Action,
+                    nameTheGame ? $"Forget the {g.Name} folder" : "Forget this folder",
+                    ActionKind.ClearPath, ModId: m.Id, Appid: g.Appid,
+                    Help: "Go back to locating this game through Steam."));
+        }
+
         if (cfg is not null && cfg.Toggles.Count > 0)
         {
             rows.Add(new(RowKind.Separator, "", Selectable: false));

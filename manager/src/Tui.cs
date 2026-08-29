@@ -65,6 +65,16 @@ public static class Tui
                     list = await mm.List();
                     if (state.ModId is not null) cfg = await LoadConfig(mm, list, state.ModId);
                     break;
+                case ActionKind.SetPath:
+                    message = await PromptForPath(mm, action.ModId!, action.Appid);
+                    list = await mm.List();
+                    cfg = await LoadConfig(mm, list, action.ModId!);
+                    break;
+                case ActionKind.ClearPath:
+                    message = await Working(() => mm.ClearGamePath(action.ModId!, action.Appid));
+                    list = await mm.List();
+                    cfg = await LoadConfig(mm, list, action.ModId!);
+                    break;
                 case ActionKind.Toggle:
                     var gk = GameKeyFor(list, action.ModId!);
                     var res = await mm.SetToggle(action.ModId!, gk, action.ToggleKey!, action.ToggleOn);
@@ -75,6 +85,20 @@ public static class Tui
             }
             catch (Exception ex) { message = "error: " + ex.Message; }   // an action must never crash the loop
         }
+    }
+
+    // Typed/pasted rather than a folder-browse dialog: no COM interop in an AOT binary,
+    // and Explorer's "Copy as path" is one keystroke away.
+    static async Task<string> PromptForPath(ModManager mm, string modId, long? appid)
+    {
+        Console.WriteLine("\n  Type or paste the game's folder, then Enter. Blank cancels.");
+        Console.WriteLine("  (In Explorer: Shift+Right-click the folder, \"Copy as path\".)");
+        Console.Write("\n  > ");
+        var typed = Console.ReadLine();
+        if (string.IsNullOrWhiteSpace(typed)) return "cancelled";
+
+        var r = await mm.SetGamePath(modId, appid, typed);
+        return string.Join("; ", r.Results.Select(x => x.Message));
     }
 
     static async Task<string> Working(Func<Task<ActionReport>> op)
