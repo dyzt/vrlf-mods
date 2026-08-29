@@ -15,6 +15,7 @@ public sealed class AppPaths
     }
 
     public string RegistryCachePath => Path.Combine(ModsRoot, "registry-cache.json");
+    public string GamePathsPath => Path.Combine(ModsRoot, "game-paths.json");
     public string ReceiptsDir => Path.Combine(ModsRoot, "receipts");
     public string BackupsDir => Path.Combine(ModsRoot, "backups");
 
