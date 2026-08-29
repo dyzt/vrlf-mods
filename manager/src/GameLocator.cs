@@ -17,6 +17,10 @@ public class GameLocator
     /// <summary>The override the user configured for this game, whether or not it still exists.</summary>
     public string? ManualPath(long appid) => _manual.Get(appid);
 
+    public void SetManual(long appid, string dir) => _manual.Set(appid, dir);
+
+    public void ClearManual(long appid) => _manual.Clear(appid);
+
     public virtual GameDir? Find(long appid)
     {
         var manual = ManualPath(appid);

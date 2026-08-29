@@ -1,6 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
-
 namespace VrlfMods;
 
 public sealed class AppPaths
@@ -26,11 +23,4 @@ public sealed class AppPaths
         => Path.Combine(BackupsDir, modId, gameKey);
 
     public static string GameKeyForAppid(long appid) => appid.ToString();
-
-    public static string GameKeyForPath(string path)
-    {
-        var norm = Path.GetFullPath(path).Replace('\\', '/').TrimEnd('/').ToLowerInvariant();
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(norm));
-        return "custom-" + Convert.ToHexString(hash).ToLowerInvariant()[..8];
-    }
 }

@@ -3,7 +3,8 @@ using VrlfMods.Patches;
 
 namespace VrlfMods;
 
-public record GameStatus(long Appid, string Name, bool Detected, string? Path, bool Installed, string? InstalledVersion);
+public record GameStatus(long Appid, string Name, bool Detected, string? Path, bool Installed,
+    string? InstalledVersion, bool Manual = false);
 public record ModStatus(string Id, string Name, string Version, string? InstalledVersion, List<GameStatus> Games);
 public record ListReport(string RegistrySource, List<ModStatus> Mods, bool VigemInstalled = false);
 public record ActionReport(bool Ok, string Command, List<OpResult> Results);
@@ -11,15 +12,15 @@ public record ActionReport(bool Ok, string Command, List<OpResult> Results);
 public sealed class ModManager
 {
     private readonly RegistryLoader _loader;
-    private readonly SteamLocator _steam;
+    private readonly GameLocator _locator;
     private readonly Installer _installer;
     private readonly ReceiptStore _receipts;
     private readonly Vigem _vigem;
     private readonly ConfigController _config;
 
-    public ModManager(RegistryLoader loader, SteamLocator steam, Installer installer,
+    public ModManager(RegistryLoader loader, GameLocator locator, Installer installer,
                       ReceiptStore receipts, Vigem vigem, PatchRegistry? patches = null)
-    { _loader = loader; _steam = steam; _installer = installer; _receipts = receipts; _vigem = vigem;
+    { _loader = loader; _locator = locator; _installer = installer; _receipts = receipts; _vigem = vigem;
       _config = new ConfigController(patches ?? PatchRegistry.Default()); }
 
     public async Task<ListReport> List()
@@ -62,11 +63,14 @@ public sealed class ModManager
         foreach (var g in mod.Games)
         {
             var key = AppPaths.GameKeyForAppid(g.Appid);
-            var dir = _steam.FindGameDir(g.Appid);
+            var found = _locator.Find(g.Appid);
+            var manual = _locator.ManualPath(g.Appid);
             var rcpt = _receipts.Load(mod.Id, key);
             if (rcpt is not null) installedVersion = rcpt.Version;
-            games.Add(new GameStatus(g.Appid, g.Name, dir is not null, dir,
-                rcpt is not null, rcpt?.Version));
+            // A stale override is reported undetected but still NAMED, so the user can see
+            // which folder to fix rather than just being told the game is missing.
+            games.Add(new GameStatus(g.Appid, g.Name, found is not null, found?.Path ?? manual,
+                rcpt is not null, rcpt?.Version, found?.Manual ?? manual is not null));
         }
         return new ModStatus(mod.Id, mod.Name, mod.Version, installedVersion, games);
     }
@@ -95,7 +99,9 @@ public sealed class ModManager
         var keys = appid is null
             ? mod.Games.Select(g => AppPaths.GameKeyForAppid(g.Appid)).ToList()
             : new List<string> { AppPaths.GameKeyForAppid(appid.Value) };
-        // Include any custom-path receipts for this mod too.
+        // Legacy: builds before the manual-path override keyed a --path install as
+        // custom-<hash>. Nothing writes those any more, but sweep them so an install
+        // made by an older build still uninstalls cleanly.
         keys.AddRange(_receipts.All().Where(r => r.ModId == mod.Id && r.GameKey.StartsWith("custom-"))
                                      .Select(r => r.GameKey));
         foreach (var key in keys.Distinct())
@@ -134,18 +140,80 @@ public sealed class ModManager
         return new ActionReport(res.Ok, "vigembus", new() { res });
     }
 
+    public async Task<ActionReport> SetGamePath(string modId, long? appid, string dir)
+    {
+        var (game, err) = await ResolveGame(modId, appid);
+        if (game is null) return Fail("path", err!);
+
+        var key = AppPaths.GameKeyForAppid(game.Appid);
+        var check = GamePathCheck.Inspect(dir);
+        if (!check.Ok) return new ActionReport(false, "path", new() { new OpResult(false, key, check.Error!) });
+
+        _locator.SetManual(game.Appid, check.Full!);
+        var msg = $"{game.Name}: using {check.Full}";
+        if (check.Warning is not null) msg += "; warning: " + check.Warning;
+        return new ActionReport(true, "path", new() { new OpResult(true, key, msg) });
+    }
+
+    public async Task<ActionReport> ClearGamePath(string modId, long? appid)
+    {
+        var (game, err) = await ResolveGame(modId, appid);
+        if (game is null) return Fail("path", err!);
+
+        _locator.ClearManual(game.Appid);
+        return new ActionReport(true, "path", new() { new OpResult(true,
+            AppPaths.GameKeyForAppid(game.Appid),
+            $"{game.Name}: manual folder cleared — back to Steam detection") });
+    }
+
+    /// <summary>Where we currently believe one of a mod's games lives, and who said so.</summary>
+    public async Task<GameStatus?> GamePath(string modId, long? appid)
+    {
+        var (game, _) = await ResolveGame(modId, appid);
+        if (game is null) return null;
+        var st = await Status(modId);
+        return st?.Games.FirstOrDefault(g => g.Appid == game.Appid);
+    }
+
+    private async Task<(GameRef? game, string? error)> ResolveGame(string modId, long? appid)
+    {
+        var (reg, _) = await _loader.Load();
+        var mod = reg.Find(modId);
+        if (mod is null) return (null, $"unknown mod id '{modId}'");
+        return GameFor(mod, appid);
+    }
+
+    // Which of a mod's games are we acting on? Every mod ships exactly one today, so --game
+    // is only needed if that ever stops being true.
+    private static (GameRef? game, string? error) GameFor(ModEntry mod, long? appid)
+    {
+        if (mod.Games.Count == 0) return (null, $"{mod.Id} names no games");
+        if (appid is null)
+            return mod.Games.Count == 1
+                ? (mod.Games[0], null)
+                : (null, $"{mod.Id} covers several games — pass --game <appid>");
+        var g = mod.Games.FirstOrDefault(x => x.Appid == appid.Value);
+        return g is null ? (null, $"appid {appid.Value} is not a listed game for {mod.Id}") : (g, null);
+    }
+
     private List<GameTarget> ResolveTargets(ModEntry mod, long? appid, string? path, out List<OpResult> problems)
     {
         problems = new();
         if (path is not null)
         {
-            var full = System.IO.Path.GetFullPath(path);
-            if (!Directory.Exists(full))
-            {
-                problems.Add(new OpResult(false, AppPaths.GameKeyForPath(full), $"path not found: {full}"));
-                return new();
-            }
-            return new() { new GameTarget(AppPaths.GameKeyForPath(full), full) };
+            var (g, gerr) = GameFor(mod, appid);
+            if (g is null) { problems.Add(new OpResult(false, "", gerr!)); return new(); }
+
+            var key = AppPaths.GameKeyForAppid(g.Appid);
+            var check = GamePathCheck.Inspect(path);
+            if (!check.Ok) { problems.Add(new OpResult(false, key, check.Error!)); return new(); }
+
+            // Remember it. The install then keys by APPID like any other, which is what keeps
+            // a manually-located game visible to status, config, update and uninstall.
+            _locator.SetManual(g.Appid, check.Full!);
+            if (check.Warning is not null)
+                problems.Add(new OpResult(true, key, "warning: " + check.Warning));
+            return new() { new GameTarget(key, check.Full!) };
         }
 
         var games = appid is null ? mod.Games : mod.Games.Where(g => g.Appid == appid.Value).ToList();
@@ -158,12 +226,14 @@ public sealed class ModManager
         var targets = new List<GameTarget>();
         foreach (var g in games)
         {
-            var dir = _steam.FindGameDir(g.Appid);
-            if (dir is null)
-                problems.Add(new OpResult(false, AppPaths.GameKeyForAppid(g.Appid),
-                    $"{g.Name} (appid {g.Appid}) not found via Steam — pass --path <game dir> to install manually"));
-            else
-                targets.Add(new GameTarget(AppPaths.GameKeyForAppid(g.Appid), dir));
+            var key = AppPaths.GameKeyForAppid(g.Appid);
+            var found = _locator.Find(g.Appid);
+            if (found is not null) { targets.Add(new GameTarget(key, found.Path)); continue; }
+
+            var manual = _locator.ManualPath(g.Appid);
+            problems.Add(new OpResult(false, key, manual is not null
+                ? $"{g.Name}: the folder you chose is no longer there: {manual} — set it again with --path <game dir>"
+                : $"{g.Name} (appid {g.Appid}) not found via Steam — pass --path <game dir> to install manually"));
         }
         return targets;
     }

@@ -11,7 +11,7 @@ internal static class Program
         var http = new HttpFetcher();
         var mm = new ModManager(
             new RegistryLoader(http, paths),
-            new SteamLocator(new RegistrySteamPaths()),
+            new GameLocator(new SteamLocator(new RegistrySteamPaths()), new GamePathStore(paths)),
             new Installer(http, paths, new ReceiptStore(paths)),
             new ReceiptStore(paths),
             new Vigem(new RegistryServiceDetector(), http, new ProcessLauncher(), paths));

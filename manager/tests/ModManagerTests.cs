@@ -43,7 +43,7 @@ public class ModManagerTests
         var loader = new RegistryLoader(f, paths);
         var store = new ReceiptStore(paths);
         // Steam locator that resolves appid 1 → our fake game dir:
-        var steam = new SteamLocatorStub(1, game);
+        var steam = new GameLocator(new SteamLocatorStub(1, game), new GamePathStore(paths));
         var installer = new Installer(f, paths, store);
         var vigem = new Vigem(new FakeServiceDetector(true), f, new FakeLauncher(), paths);
         return (new ModManager(loader, steam, installer, store, vigem), game, store, "demo");

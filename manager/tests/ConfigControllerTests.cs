@@ -19,7 +19,7 @@ public class ConfigControllerTests
         var http = new FakeHttpFetcher(new() { [RegistryLoader.RawBase + "/mods.json"] = regJson });
         var store = new ReceiptStore(paths);
         store.Save(new Receipt("demo", "1.0", "1", game, new(), new(), "t"));   // mark installed
-        var mm = new ModManager(new RegistryLoader(http, paths), new SteamLocatorStub(1, game),
+        var mm = new ModManager(new RegistryLoader(http, paths), new GameLocator(new SteamLocatorStub(1, game), new GamePathStore(paths)),
             new Installer(http, paths, store), store, new Vigem(new FakeServiceDetector(true), http, new FakeLauncher(), paths));
         return (mm, game, store);
     }
