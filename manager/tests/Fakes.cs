@@ -34,6 +34,26 @@ public sealed class FakeLauncher : VrlfMods.IProcessLauncher
     public void Launch(string path) => Launched = path;
 }
 
+public sealed class FakeElevatedRunner : VrlfMods.IElevatedRunner
+{
+    private readonly int _exitCode;
+    public List<(string Exe, string Args)> Runs { get; } = new();
+    public FakeElevatedRunner(int exitCode) => _exitCode = exitCode;
+    public int RunElevated(string exe, string args)
+    {
+        Runs.Add((exe, args));
+        return _exitCode;
+    }
+}
+
+public sealed class FakeVirtualGunState : VrlfMods.IVirtualGunState
+{
+    public string? Version { get; set; }
+    public string? Dir { get; set; }
+    public string? InstalledVersion() => Version;
+    public string? InstallDir() => Dir;
+}
+
 public sealed class AnyUrlFetcher : VrlfMods.IHttpFetcher
 {
     private readonly byte[]? _bytes;
