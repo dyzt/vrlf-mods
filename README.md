@@ -25,7 +25,9 @@ This repository is the single public home for:
 | `bbh` | Big Buck Hunter: Ultimate Trophy (3102290) | BepInEx 6 (IL2CPP) |
 | `heavy-fire` | Heavy Fire: Afghanistan (305980) + Shattered Spear (385600) | `dinput8.dll` proxy |
 | `reload` | Reload (330370) | `dinput8.dll` proxy |
+| `blue-estate` | Blue Estate (305380) | `dinput8.dll` proxy + reversible `BEGame.upk` patch |
 | `martian-panic` | Martian Panic (2343850) | BepInEx 5 (Mono) |
+| `railbreak` | Railbreak (2587170) | UE4SS (Lua); needs VRLF 0.1.37+ |
 
 ## How delivery works
 
