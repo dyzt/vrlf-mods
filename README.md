@@ -15,6 +15,9 @@ This repository is the single public home for:
 - **`mods.json`** — the registry the manager reads (served via `raw.githubusercontent.com`).
   Each entry names a mod's `version`, its committed `zip` path, its `sha256`, and the Steam
   app id(s) it targets.
+- **Drivers:** `vrlf-mods vigembus` installs ViGEmBus (co-op pads). `vrlf-mods virtualgun install|uninstall|status`
+  installs the [Virtual Lightgun](https://github.com/dyzt/vrlf-virtual-gun) driver for Raw Input games
+  (profiles with `aim_mode: hid`). Both prompt for UAC.
 
 ## Mods
 

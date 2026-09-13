@@ -38,32 +38,47 @@ public static class DemoManager
     }
 
     /// <param name="steamDir">Where Steam finds appid 1, or null for "Steam knows nothing".</param>
+    /// <param name="virtualGunInfo">Pins a registry "virtualgun" block when given; the registry
+    /// carries none by default, matching a fresh vrlf-mods release without support wired in yet.</param>
+    /// <param name="virtualGunZip">The release zip served at that pinned version's download URL,
+    /// needed only by tests that expect Install to run to completion.</param>
     public static (ModManager mm, ReceiptStore receipts, GamePathStore overrides) Build(
-        AppPaths paths, string? steamDir = null)
+        AppPaths paths, string? steamDir = null,
+        VirtualGunInfo? virtualGunInfo = null, byte[]? virtualGunZip = null,
+        IVirtualGunState? virtualGunState = null, IElevatedRunner? virtualGunRunner = null)
     {
         var zip = MakeZip("m.dll", "M");
         var hash = Installer.Sha256Hex(zip);
         var mod = new ModEntry(ModId, "Demo", "1.0", "mods/demo/dist/demo.zip", hash,
             new() { new GameRef(Appid, "Demo Game") }, false, null);
+        var vgJson = virtualGunInfo is null ? "" :
+            ", \"virtualgun\":{\"repo\":\"" + virtualGunInfo.Repo + "\",\"version\":\"" + virtualGunInfo.Version +
+            "\",\"zip\":\"" + virtualGunInfo.Zip + "\",\"sha256\":\"" + virtualGunInfo.Sha256 + "\"}";
         var regJson =
             "{ \"schema\":1, \"vigembus\":{\"repo\":\"nefarius/ViGEmBus\",\"version\":\"v1.22.0\"}, \"mods\":[" +
             "{ \"id\":\"demo\",\"name\":\"Demo\",\"version\":\"1.0\",\"zip\":\"mods/demo/dist/demo.zip\"," +
             "\"sha256\":\"" + hash + "\",\"games\":[{\"appid\":1,\"name\":\"Demo Game\"}]," +
-            "\"requiresVigembusForCoop\":false,\"notes\":null } ] }";
-        var http = new FakeHttpFetcher(new()
+            "\"requiresVigembusForCoop\":false,\"notes\":null } ]" + vgJson + " }";
+        var httpMap = new Dictionary<string, byte[]?>
         {
             [RegistryLoader.RawBase + "/mods.json"] = Encoding.UTF8.GetBytes(regJson),
             [RegistryLoader.ZipUrl(mod)] = zip,
-        });
+        };
+        if (virtualGunInfo is not null && virtualGunZip is not null)
+            httpMap[VirtualGun.ZipUrl(virtualGunInfo)] = virtualGunZip;
+        var http = new FakeHttpFetcher(httpMap);
         var receipts = new ReceiptStore(paths);
         var overrides = new GamePathStore(paths);
         // The real SteamLocator only ever returns a directory that exists, so "Steam knows
         // nothing" is modelled by a stub that answers for a different appid entirely.
         var locator = new GameLocator(
             new SteamLocatorStub(steamDir is null ? -1 : Appid, steamDir ?? string.Empty), overrides);
+        var virtualGun = new VirtualGun(virtualGunState ?? new FakeVirtualGunState(), http,
+            virtualGunRunner ?? new FakeElevatedRunner(0), paths);
         var mm = new ModManager(new RegistryLoader(http, paths), locator,
             new Installer(http, paths, receipts), receipts,
-            new Vigem(new FakeServiceDetector(true), http, new FakeLauncher(), paths));
+            new Vigem(new FakeServiceDetector(true), http, new FakeLauncher(), paths),
+            virtualGun: virtualGun);
         return (mm, receipts, overrides);
     }
 }

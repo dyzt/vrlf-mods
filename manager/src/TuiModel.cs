@@ -3,7 +3,7 @@ namespace VrlfMods;
 public enum Screen { List, Mod }
 public enum RowKind { Header, Action, Toggle, Separator, Info }
 public enum TuiKey { Up, Down, Enter, Back, Quit, Refresh, Other }
-public enum ActionKind { None, Open, Back, Quit, Install, Reinstall, Uninstall, Update, Vigem, Refresh,
+public enum ActionKind { None, Open, Back, Quit, Install, Reinstall, Uninstall, Update, Vigem, VirtualGun, Refresh,
                          Toggle, SetPath, ClearPath }
 
 public record MenuRow(RowKind Kind, string Text, ActionKind Action = ActionKind.None,
@@ -40,7 +40,7 @@ public static class TuiModel
     {
         // Pad every name to the widest one (mods + the ViGEmBus row) so all the
         // installed/not-installed labels line up in a single column.
-        int width = Math.Max("ViGEmBus".Length,
+        int width = Math.Max(Math.Max("ViGEmBus".Length, "Virtual Lightgun".Length),
             r.Mods.Count == 0 ? 0 : r.Mods.Max(m => DisplayName(m.Name).Length));
 
         var rows = new List<MenuRow>();
@@ -53,6 +53,20 @@ public static class TuiModel
             Help: r.VigemInstalled
                 ? "Virtual gamepad driver — required for 2-gun co-op. Already installed."
                 : "Virtual gamepad driver — required for 2-gun co-op. Enter to install."));
+
+        if (r.VirtualGunAvailable || r.VirtualGunInstalled)
+        {
+            string gstatus = r.VirtualGunUpdate is not null
+                ? $"● update to v{r.VirtualGunUpdate}"
+                : r.VirtualGunInstalled ? "● installed" : "○ not installed";
+            rows.Add(new MenuRow(RowKind.Action, $"{"Virtual Lightgun".PadRight(width)}   {gstatus}",
+                ActionKind.VirtualGun,
+                Help: r.VirtualGunUpdate is not null
+                    ? "Virtual lightgun driver for Raw Input games (aim_mode hid). Enter to update."
+                    : r.VirtualGunInstalled
+                        ? "Virtual lightgun driver for Raw Input games (aim_mode hid). Enter shows its version."
+                        : "Virtual lightgun driver for Raw Input games (aim_mode hid). Enter to install."));
+        }
         rows.Add(new MenuRow(RowKind.Separator, "", Selectable: false));
 
         foreach (var m in r.Mods)

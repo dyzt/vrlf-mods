@@ -5,6 +5,9 @@ namespace VrlfMods;
 public record GameRef(long Appid, string Name);
 public record VigemInfo(string Repo, string Version);
 
+/// <summary>The vrlf-virtual-gun GitHub release the manager installs.</summary>
+public record VirtualGunInfo(string Repo, string Version, string Zip, string Sha256);
+
 public record ConfigToggle(
     string Label,
     string? Key = null,
@@ -23,7 +26,7 @@ public record ModEntry(
     string? Notes,
     ConfigManifest? Config = null);
 
-public record ModRegistry(int Schema, VigemInfo Vigembus, List<ModEntry> Mods)
+public record ModRegistry(int Schema, VigemInfo Vigembus, List<ModEntry> Mods, VirtualGunInfo? Virtualgun = null)
 {
     public ModEntry? Find(string id) =>
         Mods.FirstOrDefault(m => string.Equals(m.Id, id, StringComparison.OrdinalIgnoreCase));

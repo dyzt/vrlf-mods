@@ -60,6 +60,10 @@ public static class Tui
                     message = await Working(() => mm.EnsureVigem());
                     list = await mm.List();   // reflect the new install state in the ViGEmBus row
                     break;
+                case ActionKind.VirtualGun:
+                    message = await Working(() => mm.VirtualGunMenu());
+                    list = await mm.List();   // reflect the new install state in the row
+                    break;
                 case ActionKind.Refresh:
                     message = "refreshed";
                     list = await mm.List();

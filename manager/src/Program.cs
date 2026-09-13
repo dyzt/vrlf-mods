@@ -14,7 +14,8 @@ internal static class Program
             new GameLocator(new SteamLocator(new RegistrySteamPaths()), new GamePathStore(paths)),
             new Installer(http, paths, new ReceiptStore(paths)),
             new ReceiptStore(paths),
-            new Vigem(new RegistryServiceDetector(), http, new ProcessLauncher(), paths));
+            new Vigem(new RegistryServiceDetector(), http, new ProcessLauncher(), paths),
+            virtualGun: new VirtualGun(new RegistryVirtualGunState(), http, new ElevatedRunner(), paths));
 
         return await Run(p, mm);
     }
@@ -52,6 +53,13 @@ internal static class Program
                 case "uninstall": return Report(await mm.Uninstall(p.Id!, p.Appid), p.Json);
                 case "update":    return Report(await mm.Update(p.Id), p.Json);
                 case "vigembus":  return Report(await mm.EnsureVigem(), p.Json);
+                case "virtualgun":
+                    return Report(p.Id switch
+                    {
+                        "install" => await mm.VirtualGunInstall(),
+                        "uninstall" => await mm.VirtualGunUninstall(),
+                        _ => await mm.VirtualGunStatus(),
+                    }, p.Json);
                 case "config":    return await Config(p, mm);
                 case "path":      return await GamePath(p, mm);
                 default: Console.Error.WriteLine("error: unknown command"); return 1;
