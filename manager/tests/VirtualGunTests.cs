@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.IO;
 using System.IO.Compression;
 using Xunit;
@@ -16,6 +17,17 @@ public class VirtualGunTests
         {
             using (var w = new StreamWriter(zip.CreateEntry(VirtualGun.SetupExe).Open())) w.Write("exe");
             using (var w = new StreamWriter(zip.CreateEntry("driver/VRLFVirtualGun.inf").Open())) w.Write("inf");
+        }
+        return ms.ToArray();
+    }
+
+    static byte[] TraversalZip()
+    {
+        using var ms = new MemoryStream();
+        using (var zip = new ZipArchive(ms, ZipArchiveMode.Create, leaveOpen: true))
+        {
+            using (var w = new StreamWriter(zip.CreateEntry(VirtualGun.SetupExe).Open())) w.Write("exe");
+            using (var w = new StreamWriter(zip.CreateEntry("../escape.txt").Open())) w.Write("escape");
         }
         return ms.ToArray();
     }
@@ -74,6 +86,30 @@ public class VirtualGunTests
         Assert.False(r.Ok);
         Assert.Contains("hash", r.Message);
         Assert.Empty(runner.Runs);
+    }
+
+    [Fact]
+    public async Task Install_refuses_a_zip_with_a_traversal_entry()
+    {
+        var zip = TraversalZip();
+        var info = Info(zip);
+        var (gun, runner, _) = Build(zip, info);
+        var r = await gun.Install(info);
+        Assert.False(r.Ok);
+        Assert.Contains("corrupt or unsafe", r.Message);
+        Assert.Empty(runner.Runs);
+    }
+
+    [Fact]
+    public async Task Install_reports_a_launch_failure()
+    {
+        var zip = ReleaseZip();
+        var info = Info(zip);
+        var (gun, runner, _) = Build(zip, info);
+        runner.Throws = new Win32Exception(2);
+        var r = await gun.Install(info);
+        Assert.False(r.Ok);
+        Assert.Contains("could not launch", r.Message);
     }
 
     [Fact]

@@ -89,8 +89,9 @@ public sealed class VirtualGun
         var dir = StagingDir(info);
         if (Directory.Exists(dir)) Directory.Delete(dir, recursive: true);
         Directory.CreateDirectory(dir);
-        using (var archive = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read))
+        try
         {
+            using var archive = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read);
             foreach (var entry in archive.Entries)
             {
                 if (string.IsNullOrEmpty(entry.Name)) continue;
@@ -99,19 +100,30 @@ public sealed class VirtualGun
                 entry.ExtractToFile(dest, overwrite: true);
             }
         }
+        catch (Exception ex)
+        {
+            return new OpResult(false, Key, $"the release zip is corrupt or unsafe: {ex.Message}");
+        }
 
         var setup = Path.Combine(dir, SetupExe);
         if (!File.Exists(setup))
             return new OpResult(false, Key, "the release zip has no installer");
 
-        return _runner.RunElevated(setup, "install") switch
+        try
         {
-            0 => new OpResult(true, Key, $"Virtual Lightgun {info.Version} installed"),
-            3010 => new OpResult(true, Key, $"Virtual Lightgun {info.Version} installed; restart Windows to finish"),
-            UacDeclined => new OpResult(false, Key, "install cancelled at the UAC prompt"),
-            var code => new OpResult(false, Key,
-                $"installer failed (exit {code}); see %ProgramData%\\VRLF\\VirtualGun\\setup.log"),
-        };
+            return _runner.RunElevated(setup, "install") switch
+            {
+                0 => new OpResult(true, Key, $"Virtual Lightgun {info.Version} installed"),
+                3010 => new OpResult(true, Key, $"Virtual Lightgun {info.Version} installed; restart Windows to finish"),
+                UacDeclined => new OpResult(false, Key, "install cancelled at the UAC prompt"),
+                var code => new OpResult(false, Key,
+                    $"installer failed (exit {code}); see %ProgramData%\\VRLF\\VirtualGun\\setup.log"),
+            };
+        }
+        catch (Win32Exception ex)
+        {
+            return new OpResult(false, Key, $"could not launch the installer: {ex.Message}");
+        }
     }
 
     public OpResult Uninstall()
@@ -122,13 +134,20 @@ public sealed class VirtualGun
         var setup = dir is null ? null : Path.Combine(dir, SetupExe);
         if (setup is null || !File.Exists(setup))
             return new OpResult(false, Key, "installed, but its uninstaller is missing; run install again first");
-        return _runner.RunElevated(setup, "uninstall") switch
+        try
         {
-            0 => new OpResult(true, Key, "Virtual Lightgun uninstalled"),
-            UacDeclined => new OpResult(false, Key, "uninstall cancelled at the UAC prompt"),
-            var code => new OpResult(false, Key,
-                $"uninstaller failed (exit {code}); see %ProgramData%\\VRLF\\VirtualGun\\setup.log"),
-        };
+            return _runner.RunElevated(setup, "uninstall") switch
+            {
+                0 => new OpResult(true, Key, "Virtual Lightgun uninstalled"),
+                UacDeclined => new OpResult(false, Key, "uninstall cancelled at the UAC prompt"),
+                var code => new OpResult(false, Key,
+                    $"uninstaller failed (exit {code}); see %ProgramData%\\VRLF\\VirtualGun\\setup.log"),
+            };
+        }
+        catch (Win32Exception ex)
+        {
+            return new OpResult(false, Key, $"could not launch the installer: {ex.Message}");
+        }
     }
 
     public OpResult Status(VirtualGunInfo? info)

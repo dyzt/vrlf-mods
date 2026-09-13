@@ -38,9 +38,11 @@ public sealed class FakeElevatedRunner : VrlfMods.IElevatedRunner
 {
     private readonly int _exitCode;
     public List<(string Exe, string Args)> Runs { get; } = new();
+    public Exception? Throws { get; set; }
     public FakeElevatedRunner(int exitCode) => _exitCode = exitCode;
     public int RunElevated(string exe, string args)
     {
+        if (Throws is not null) throw Throws;
         Runs.Add((exe, args));
         return _exitCode;
     }
