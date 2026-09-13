@@ -34,11 +34,14 @@ public static class Cli
             }
         }
 
-        var known = new[] { "list", "status", "install", "uninstall", "update", "vigembus", "menu", "config", "path" };
+        var known = new[] { "list", "status", "install", "uninstall", "update", "vigembus", "virtualgun", "menu", "config", "path" };
         if (!known.Contains(cmd)) return Err(cmd, $"unknown command '{cmd}'");
 
         string? id = pos.Count > 0 ? pos[0] : null;
         string? sub = null, value = null; bool flagOn = false;
+
+        if (cmd == "virtualgun" && id is not null && id is not ("install" or "uninstall" or "status"))
+            return Err(cmd, "usage: virtualgun [install|uninstall|status]");
 
         if (cmd == "config")
         {

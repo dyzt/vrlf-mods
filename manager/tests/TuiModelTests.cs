@@ -88,11 +88,25 @@ public class TuiModelTests
         Assert.True(off[0].Selectable);
         Assert.Contains("ViGEmBus", off[0].Text);
         Assert.Contains("not installed", off[0].Text);
-        Assert.Equal(RowKind.Separator, off[1].Kind);   // gap before the mods
+        Assert.Equal(ActionKind.VirtualGun, off[1].Action);
+        Assert.Equal(RowKind.Separator, off[2].Kind);   // gap before the mods
 
         var on = TuiModel.ListRows(new ListReport("net", mods, VigemInstalled: true));
         Assert.Contains("installed", on[0].Text);
         Assert.DoesNotContain("not installed", on[0].Text);
+    }
+
+    [Fact] public void ListRows_virtual_lightgun_row_reflects_status()
+    {
+        var mods = new List<ModStatus> { Installed() };
+        var off = TuiModel.ListRows(new ListReport("net", mods, VigemInstalled: true, VirtualGunInstalled: false));
+        Assert.Equal(ActionKind.VirtualGun, off[1].Action);
+        Assert.True(off[1].Selectable);
+        Assert.Contains("Virtual Lightgun", off[1].Text);
+        Assert.Contains("not installed", off[1].Text);
+
+        var on = TuiModel.ListRows(new ListReport("net", mods, VigemInstalled: true, VirtualGunInstalled: true));
+        Assert.DoesNotContain("not installed", on[1].Text);
     }
 
     [Fact] public void ListRows_aligns_status_column_across_rows()

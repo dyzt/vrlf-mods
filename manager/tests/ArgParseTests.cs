@@ -62,4 +62,29 @@ public class ArgParseTests
     [Fact]
     public void Config_without_id_is_an_error()
         => Assert.NotNull(Cli.Parse(new[] { "config" }).Error);
+
+    [Theory]
+    [InlineData("install")]
+    [InlineData("uninstall")]
+    [InlineData("status")]
+    public void Parses_virtualgun_subcommands(string sub)
+    {
+        var p = Cli.Parse(new[] { "virtualgun", sub, "--json" });
+        Assert.Null(p.Error);
+        Assert.Equal("virtualgun", p.Command);
+        Assert.Equal(sub, p.Id);
+        Assert.True(p.Json);
+    }
+
+    [Fact]
+    public void Virtualgun_without_a_subcommand_means_status()
+    {
+        var p = Cli.Parse(new[] { "virtualgun" });
+        Assert.Null(p.Error);
+        Assert.Null(p.Id);
+    }
+
+    [Fact]
+    public void Virtualgun_unknown_subcommand_is_an_error()
+        => Assert.NotNull(Cli.Parse(new[] { "virtualgun", "reboot" }).Error);
 }
