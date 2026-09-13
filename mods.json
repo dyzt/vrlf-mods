@@ -111,6 +111,18 @@
           { "key": "HideCrosshair", "label": "Hide crosshair" },
           { "key": "VerboseLog", "label": "Verbose log" }
         ]
+      } },
+    { "id": "railbreak", "name": "Railbreak VRLF Mod",
+      "version": "1.0.0", "zip": "mods/railbreak/dist/railbreak-v1.0.0.zip", "sha256": "9ec6bb1d7a97089934f495fe79877f9d5b7b53ec244ac29e89cc1354753ebde5",
+      "games": [ { "appid": 2587170, "name": "Railbreak" } ],
+      "requiresVigembusForCoop": true,
+      "notes": "Requires VRLF 0.1.37 or newer. 2-gun co-op: P2 aims 1:1 from a ViGEmBus pad gun; set the main menu \"1 player\" button to \"2 player\". Installs UE4SS, replacing any existing UE4SS.",
+      "config": {
+        "file": "Railbreak/Binaries/Win64/ue4ss/Mods/RailbreakVrlf/railbreak_vrlf.cfg", "format": "kv",
+        "toggles": [
+          { "key": "DriveP2", "label": "Absolute aim (P2)" },
+          { "key": "VerboseLog", "label": "Verbose log" }
+        ]
       } }
   ]
 }
