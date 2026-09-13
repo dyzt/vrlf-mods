@@ -48,4 +48,34 @@ public class RegistryLoaderTests
         Assert.Equal("embedded", source);
         Assert.Equal(8, reg.Mods.Count);      // the real embedded catalog
     }
+
+    [Fact]
+    public async Task Parses_the_virtualgun_block()
+    {
+        var paths = TempPaths();
+        var url = RegistryLoader.RawBase + "/mods.json";
+        var json = Encoding.UTF8.GetBytes("""
+            { "schema": 1, "vigembus": {"repo":"nefarius/ViGEmBus","version":"v1"}, "mods": [],
+              "virtualgun": {"repo":"dyzt/vrlf-virtual-gun","version":"v1.0.0",
+                             "zip":"vrlf-virtual-gun-1.0.0.zip","sha256":"abc"} }
+            """);
+        var loader = new RegistryLoader(new FakeHttpFetcher(new() { [url] = json }), paths);
+        var (reg, _) = await loader.Load();
+        Assert.NotNull(reg.Virtualgun);
+        Assert.Equal("dyzt/vrlf-virtual-gun", reg.Virtualgun!.Repo);
+        Assert.Equal("v1.0.0", reg.Virtualgun.Version);
+        Assert.Equal("vrlf-virtual-gun-1.0.0.zip", reg.Virtualgun.Zip);
+        Assert.Equal("abc", reg.Virtualgun.Sha256);
+    }
+
+    [Fact]
+    public async Task Registry_without_virtualgun_still_parses()
+    {
+        var paths = TempPaths();
+        var url = RegistryLoader.RawBase + "/mods.json";
+        var loader = new RegistryLoader(new FakeHttpFetcher(new() { [url] = MinimalRegistry("v9") }), paths);
+        var (reg, source) = await loader.Load();
+        Assert.Equal("network", source);
+        Assert.Null(reg.Virtualgun);
+    }
 }
