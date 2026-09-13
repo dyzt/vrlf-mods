@@ -87,4 +87,12 @@ public class ArgParseTests
     [Fact]
     public void Virtualgun_unknown_subcommand_is_an_error()
         => Assert.NotNull(Cli.Parse(new[] { "virtualgun", "reboot" }).Error);
+
+    [Fact]
+    public void Virtualgun_subcommand_is_case_insensitive()
+    {
+        var p = Cli.Parse(new[] { "virtualgun", "INSTALL" });
+        Assert.Null(p.Error);
+        Assert.Equal("install", p.Id);
+    }
 }

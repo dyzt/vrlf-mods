@@ -73,7 +73,43 @@ public class VirtualGunTests
         var run = Assert.Single(runner.Runs);
         Assert.Equal(Path.Combine(gun.StagingDir(info), VirtualGun.SetupExe), run.Exe);
         Assert.Equal("install", run.Args);
-        Assert.True(File.Exists(Path.Combine(gun.StagingDir(info), "driver", "VRLFVirtualGun.inf")));
+    }
+
+    [Fact]
+    public async Task Install_deletes_the_staging_dir_after_a_successful_run()
+    {
+        var zip = ReleaseZip();
+        var info = Info(zip);
+        var (gun, _, _) = Build(zip, info);
+        var r = await gun.Install(info);
+        Assert.True(r.Ok, r.Message);
+        Assert.False(Directory.Exists(gun.StagingDir(info)));
+    }
+
+    [Fact]
+    public void ExtractedInstallerMatches_detects_tampering()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "vrlf-vg-tamper-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        var path = Path.Combine(dir, VirtualGun.SetupExe);
+        File.WriteAllBytes(path, "original"u8.ToArray());
+        var expected = System.Security.Cryptography.SHA256.HashData("original"u8.ToArray());
+        Assert.True(VirtualGun.ExtractedInstallerMatches(path, expected));
+
+        File.WriteAllBytes(path, "tampered"u8.ToArray());
+        Assert.False(VirtualGun.ExtractedInstallerMatches(path, expected));
+    }
+
+    [Fact]
+    public async Task Install_refuses_a_registry_version_that_is_not_a_valid_folder_name()
+    {
+        var zip = ReleaseZip();
+        var info = Info(zip) with { Version = "../evil" };
+        var (gun, runner, _) = Build(zip, info);
+        var r = await gun.Install(info);
+        Assert.False(r.Ok);
+        Assert.Contains("not a valid folder name", r.Message);
+        Assert.Empty(runner.Runs);
     }
 
     [Fact]
