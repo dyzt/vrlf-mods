@@ -1,10 +1,10 @@
 namespace VrlfMods;
 
-public enum Screen { List, Mod }
+public enum Screen { List, Mod, VirtualGun }
 public enum RowKind { Header, Action, Toggle, Separator, Info }
 public enum TuiKey { Up, Down, Enter, Back, Quit, Refresh, Other }
 public enum ActionKind { None, Open, Back, Quit, Install, Reinstall, Uninstall, Update, Vigem, VirtualGun, Refresh,
-                         Toggle, SetPath, ClearPath }
+                         Toggle, SetPath, ClearPath, GunInstall, GunUninstall }
 
 public record MenuRow(RowKind Kind, string Text, ActionKind Action = ActionKind.None,
     string? ModId = null, string? ToggleKey = null, bool? ToggleOn = null, long? Appid = null,
@@ -56,16 +56,9 @@ public static class TuiModel
 
         if (r.VirtualGunAvailable || r.VirtualGunInstalled)
         {
-            string gstatus = r.VirtualGunUpdate is not null
-                ? $"● update to v{r.VirtualGunUpdate}"
-                : r.VirtualGunInstalled ? "● installed" : "○ not installed";
-            rows.Add(new MenuRow(RowKind.Action, $"{"Virtual Lightgun".PadRight(width)}   {gstatus}",
+            rows.Add(new MenuRow(RowKind.Action, $"{"Virtual Lightgun".PadRight(width)}   {VirtualGunStatus(r)}",
                 ActionKind.VirtualGun,
-                Help: r.VirtualGunUpdate is not null
-                    ? "Virtual lightgun driver for Raw Input games (aim_mode hid). Enter to update."
-                    : r.VirtualGunInstalled
-                        ? "Virtual lightgun driver for Raw Input games (aim_mode hid). Enter shows its version."
-                        : "Virtual lightgun driver for Raw Input games (aim_mode hid). Enter to install."));
+                Help: "Virtual lightgun driver for Raw Input games (aim_mode hid). Enter to install, update, reinstall or uninstall."));
         }
         rows.Add(new MenuRow(RowKind.Separator, "", Selectable: false));
 
@@ -73,6 +66,40 @@ public static class TuiModel
             rows.Add(new MenuRow(RowKind.Action, $"{DisplayName(m.Name).PadRight(width)}   {RowStatus(m)}",
                 ActionKind.Open, ModId: m.Id));
 
+        return rows;
+    }
+
+    public static string VirtualGunStatus(ListReport r)
+    {
+        if (!r.VirtualGunInstalled) return "○ not installed";
+        if (r.VirtualGunUpdate is not null) return $"● update to v{r.VirtualGunUpdate}";
+        return r.VirtualGunVersion is null ? "● installed" : $"● installed v{r.VirtualGunVersion}";
+    }
+
+    /// <summary>The Virtual Lightgun screen. Install, Update and Reinstall need this release to pin a
+    /// driver; Uninstall only needs one installed. Reinstall is hidden while an update is pending,
+    /// because it would install the same pinned version the Update row does.</summary>
+    public static List<MenuRow> VirtualGunRows(ListReport r)
+    {
+        const string Admin = " Windows asks for administrator approval.";
+        var rows = new List<MenuRow>();
+        if (!r.VirtualGunInstalled && r.VirtualGunAvailable)
+            rows.Add(new(RowKind.Action, "Install", ActionKind.GunInstall,
+                Help: "Installs the driver, so Raw Input games see each VRLF gun as its own mouse." + Admin));
+        if (r.VirtualGunInstalled && r.VirtualGunAvailable)
+        {
+            if (r.VirtualGunUpdate is not null)
+                rows.Add(new(RowKind.Action, $"Update → v{r.VirtualGunUpdate}", ActionKind.GunInstall,
+                    Help: "Installs the newer driver over this one. Game bindings keep working." + Admin));
+            else
+                rows.Add(new(RowKind.Action, "Reinstall", ActionKind.GunInstall,
+                    Help: "Runs the installer again. Fixes guns a game can't see, or bindings shared from another PC that don't match." + Admin));
+        }
+        if (r.VirtualGunInstalled)
+            rows.Add(new(RowKind.Action, "Uninstall", ActionKind.GunUninstall,
+                Help: "Removes the driver and its virtual lightguns. Close VRLF first." + Admin));
+        rows.Add(new(RowKind.Separator, "", Selectable: false));
+        rows.Add(new(RowKind.Info, "Used by profiles with aim_mode hid, such as TeknoParrot RawInput games.", Selectable: false));
         return rows;
     }
 
@@ -161,6 +188,8 @@ public static class TuiModel
                 if (!row.Selectable || !row.Enabled) return (s, new TuiAction(ActionKind.None));
                 if (row.Action == ActionKind.Open)
                     return (new TuiState(Screen.Mod, 0, row.ModId), new TuiAction(ActionKind.Open, row.ModId));
+                if (row.Action == ActionKind.VirtualGun)
+                    return (new TuiState(Screen.VirtualGun, 0, null), new TuiAction(ActionKind.VirtualGun));
                 if (row.Action == ActionKind.Toggle)
                     return (s, new TuiAction(ActionKind.Toggle, row.ModId, row.ToggleKey, !(row.ToggleOn ?? false)));
                 return (s, new TuiAction(row.Action, row.ModId, Appid: row.Appid));

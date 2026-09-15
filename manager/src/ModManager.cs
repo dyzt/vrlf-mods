@@ -7,7 +7,8 @@ public record GameStatus(long Appid, string Name, bool Detected, string? Path, b
     string? InstalledVersion, bool Manual = false);
 public record ModStatus(string Id, string Name, string Version, string? InstalledVersion, List<GameStatus> Games);
 public record ListReport(string RegistrySource, List<ModStatus> Mods, bool VigemInstalled = false,
-    bool VirtualGunInstalled = false, bool VirtualGunAvailable = false, string? VirtualGunUpdate = null);
+    bool VirtualGunInstalled = false, bool VirtualGunAvailable = false, string? VirtualGunUpdate = null,
+    string? VirtualGunVersion = null);
 public record ActionReport(bool Ok, string Command, List<OpResult> Results);
 
 public sealed class ModManager
@@ -31,7 +32,7 @@ public sealed class ModManager
         var (reg, source) = await _loader.Load();
         return new ListReport(source, reg.Mods.Select(StatusFor).ToList(), _vigem.IsInstalled(),
             _virtualGun?.IsInstalled() ?? false, reg.Virtualgun is not null,
-            _virtualGun?.PendingUpdate(reg.Virtualgun));
+            _virtualGun?.PendingUpdate(reg.Virtualgun), _virtualGun?.InstalledVersion());
     }
 
     public async Task<ModStatus?> Status(string id)
@@ -162,16 +163,6 @@ public sealed class ModManager
     {
         var (reg, _) = await _loader.Load();
         var res = Gun().Status(reg.Virtualgun);
-        return new ActionReport(res.Ok, "virtualgun", new() { res });
-    }
-
-    /// <summary>The menu row: install when absent or a newer pinned version exists, otherwise report status.</summary>
-    public async Task<ActionReport> VirtualGunMenu()
-    {
-        var (reg, _) = await _loader.Load();
-        var gun = Gun();
-        var needsInstall = !gun.IsInstalled() || gun.PendingUpdate(reg.Virtualgun) is not null;
-        var res = needsInstall ? await gun.Install(reg.Virtualgun) : gun.Status(reg.Virtualgun);
         return new ActionReport(res.Ok, "virtualgun", new() { res });
     }
 

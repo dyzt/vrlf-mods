@@ -16,10 +16,13 @@ public static class Tui
         while (true)
         {
             var status = state.ModId is null ? null : list.Mods.FirstOrDefault(m => m.Id == state.ModId);
-            var rows = state.Screen == Screen.List || status is null
-                ? TuiModel.ListRows(list)
-                : TuiModel.ModRows(status, cfg);
-            Render(state, rows, status, message);
+            var rows = state.Screen switch
+            {
+                Screen.VirtualGun => TuiModel.VirtualGunRows(list),
+                Screen.Mod when status is not null => TuiModel.ModRows(status, cfg),
+                _ => TuiModel.ListRows(list),
+            };
+            Render(state, rows, status, list, message);
             message = null;
 
             var key = MapKey(Console.ReadKey(intercept: true));
@@ -61,8 +64,17 @@ public static class Tui
                     list = await mm.List();   // reflect the new install state in the ViGEmBus row
                     break;
                 case ActionKind.VirtualGun:
-                    message = await Working(() => mm.VirtualGunMenu());
-                    list = await mm.List();   // reflect the new install state in the row
+                    list = await mm.List();   // the screen shows the install state as it is now
+                    break;
+                case ActionKind.GunInstall:
+                    message = await Working(() => mm.VirtualGunInstall());
+                    list = await mm.List();
+                    state = state with { Cursor = 0 };   // the rows change with the install state
+                    break;
+                case ActionKind.GunUninstall:
+                    message = await Working(() => mm.VirtualGunUninstall());
+                    list = await mm.List();
+                    state = state with { Cursor = 0 };
                     break;
                 case ActionKind.Refresh:
                     message = "refreshed";
@@ -140,12 +152,15 @@ public static class Tui
         }
     };
 
-    static void Render(TuiState s, List<MenuRow> rows, ModStatus? mod, string? message)
+    static void Render(TuiState s, List<MenuRow> rows, ModStatus? mod, ListReport list, string? message)
     {
         Console.Clear();
-        Console.WriteLine(s.Screen == Screen.List || mod is null
-            ? "  VRLF Mod Manager\n"
-            : $"  {TuiModel.DisplayName(mod.Name)}  —  {TuiModel.RowStatus(mod)}\n");
+        Console.WriteLine(s.Screen switch
+        {
+            Screen.VirtualGun => $"  Virtual Lightgun  —  {TuiModel.VirtualGunStatus(list)}\n",
+            Screen.Mod when mod is not null => $"  {TuiModel.DisplayName(mod.Name)}  —  {TuiModel.RowStatus(mod)}\n",
+            _ => "  VRLF Mod Manager\n",
+        });
 
         for (int i = 0; i < rows.Count; i++)
         {

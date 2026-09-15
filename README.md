@@ -17,7 +17,8 @@ This repository is the single public home for:
   app id(s) it targets.
 - **Drivers:** `vrlf-mods vigembus` installs ViGEmBus (co-op pads). `vrlf-mods virtualgun install|uninstall|status`
   installs the [Virtual Lightgun](https://github.com/dyzt/vrlf-virtual-gun) driver for Raw Input games
-  (profiles with `aim_mode: hid`). Both prompt for UAC.
+  (profiles with `aim_mode: hid`). In the menu, the **Virtual Lightgun** row opens Install (or Update),
+  Reinstall and Uninstall. Both drivers prompt for UAC.
 
 ## Mods
 

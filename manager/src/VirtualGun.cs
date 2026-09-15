@@ -59,6 +59,10 @@ public sealed class VirtualGun
 {
     public const string SetupExe = "vrlf-virtual-gun-setup.exe";
     public const int UacDeclined = -1223;
+    /// <summary>ERROR_INSTALL_ALREADY_RUNNING: setup gave up waiting for another install or uninstall.</summary>
+    public const int SetupBusy = 1618;
+    private const string BusyMessage =
+        "another Virtual Lightgun install or uninstall is still running; try again when it finishes";
     private const string Key = "virtualgun";
 
     private readonly IVirtualGunState _state;
@@ -74,6 +78,8 @@ public sealed class VirtualGun
 
     /// <summary>The installer writes Version last, so its presence means a complete install.</summary>
     public bool IsInstalled() => _state.InstalledVersion() is not null;
+
+    public string? InstalledVersion() => _state.InstalledVersion()?.TrimStart('v');
 
     public string StagingDir(VirtualGunInfo info) => Path.Combine(_paths.ModsRoot, "virtualgun", info.Version);
 
@@ -145,6 +151,7 @@ public sealed class VirtualGun
                 0 => new OpResult(true, Key, $"Virtual Lightgun {info.Version} installed"),
                 3010 => new OpResult(true, Key, $"Virtual Lightgun {info.Version} installed; restart Windows to finish"),
                 UacDeclined => new OpResult(false, Key, "install cancelled at the UAC prompt"),
+                SetupBusy => new OpResult(false, Key, BusyMessage),
                 var code => new OpResult(false, Key,
                     $"installer failed (exit {code}); see %ProgramData%\\VRLF\\VirtualGun\\setup.log"),
             };
@@ -176,6 +183,7 @@ public sealed class VirtualGun
             {
                 0 => new OpResult(true, Key, "Virtual Lightgun uninstalled"),
                 UacDeclined => new OpResult(false, Key, "uninstall cancelled at the UAC prompt"),
+                SetupBusy => new OpResult(false, Key, BusyMessage),
                 var code => new OpResult(false, Key,
                     $"uninstaller failed (exit {code}); see %ProgramData%\\VRLF\\VirtualGun\\setup.log"),
             };

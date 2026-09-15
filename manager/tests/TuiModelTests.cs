@@ -128,6 +128,70 @@ public class TuiModelTests
         Assert.Contains("update to v1.1.0", row.Text);
     }
 
+    static ListReport Gun(bool installed, string? version = null, string? update = null, bool available = true) =>
+        new("net", new(), VigemInstalled: true, VirtualGunInstalled: installed, VirtualGunAvailable: available,
+            VirtualGunUpdate: update, VirtualGunVersion: version);
+
+    static List<ActionKind> Actions(List<MenuRow> rows) =>
+        rows.Where(r => r.Selectable).Select(r => r.Action).ToList();
+
+    [Fact] public void Enter_on_the_virtual_lightgun_row_opens_its_screen_without_running_anything()
+    {
+        var rows = TuiModel.ListRows(Gun(installed: true, version: "1.0.3"));
+        int at = rows.FindIndex(r => r.Action == ActionKind.VirtualGun);
+        var (s, act) = TuiModel.Reduce(new TuiState(Screen.List, at, null), TuiKey.Enter, rows);
+        Assert.Equal(Screen.VirtualGun, s.Screen);
+        Assert.Equal(0, s.Cursor);
+        Assert.Equal(ActionKind.VirtualGun, act.Kind);
+    }
+
+    [Fact] public void Back_from_the_virtual_lightgun_screen_returns_to_the_list()
+    {
+        var (s, act) = TuiModel.Reduce(new TuiState(Screen.VirtualGun, 1, null), TuiKey.Back, new());
+        Assert.Equal(Screen.List, s.Screen);
+        Assert.Equal(ActionKind.Back, act.Kind);
+    }
+
+    [Fact] public void VirtualGunRows_offer_install_when_not_installed()
+    {
+        var rows = TuiModel.VirtualGunRows(Gun(installed: false));
+        Assert.Equal(new List<ActionKind> { ActionKind.GunInstall }, Actions(rows));
+        Assert.Equal("Install", rows[0].Text);
+        Assert.True(rows[0].Selectable);   // the cursor starts on a real action
+    }
+
+    [Fact] public void VirtualGunRows_offer_reinstall_and_uninstall_when_current()
+    {
+        var rows = TuiModel.VirtualGunRows(Gun(installed: true, version: "1.0.3"));
+        Assert.Equal(new List<ActionKind> { ActionKind.GunInstall, ActionKind.GunUninstall }, Actions(rows));
+        Assert.Equal("Reinstall", rows[0].Text);
+        Assert.Equal("Uninstall", rows[1].Text);
+        Assert.All(rows.Where(r => r.Selectable), r => Assert.False(string.IsNullOrEmpty(r.Help)));
+    }
+
+    [Fact] public void VirtualGunRows_offer_update_instead_of_reinstall_when_newer_is_pinned()
+    {
+        // Reinstall would install the pinned version too, so it would just be a second Update row.
+        var rows = TuiModel.VirtualGunRows(Gun(installed: true, version: "1.0.2", update: "1.0.3"));
+        Assert.Equal(new List<ActionKind> { ActionKind.GunInstall, ActionKind.GunUninstall }, Actions(rows));
+        Assert.Equal("Update → v1.0.3", rows[0].Text);
+        Assert.DoesNotContain(rows, r => r.Text == "Reinstall");
+    }
+
+    [Fact] public void VirtualGunRows_still_offer_uninstall_when_this_release_does_not_offer_the_driver()
+    {
+        var rows = TuiModel.VirtualGunRows(Gun(installed: true, version: "1.0.3", available: false));
+        Assert.Equal(new List<ActionKind> { ActionKind.GunUninstall }, Actions(rows));
+        Assert.Equal(0, rows.FindIndex(r => r.Selectable));
+    }
+
+    [Fact] public void VirtualGunStatus_names_the_installed_version()
+    {
+        Assert.Equal("● installed v1.0.3", TuiModel.VirtualGunStatus(Gun(installed: true, version: "1.0.3")));
+        Assert.Contains("update to v1.0.3", TuiModel.VirtualGunStatus(Gun(installed: true, version: "1.0.2", update: "1.0.3")));
+        Assert.Equal("○ not installed", TuiModel.VirtualGunStatus(Gun(installed: false)));
+    }
+
     [Fact] public void ListRows_aligns_status_column_across_rows()
     {
         var mods = new List<ModStatus> {

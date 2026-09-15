@@ -3,9 +3,9 @@ using Xunit;
 
 namespace VrlfMods.Tests;
 
-/// <summary>The composition seam VirtualGunTests.cs doesn't reach: ModManager.VirtualGunMenu
-/// picking install vs. status off the loaded registry, and Program dispatching "virtualgun
-/// install" through a ModManager wired the way Program.Main actually wires one.</summary>
+/// <summary>The composition seam VirtualGunTests.cs doesn't reach: ModManager reporting and
+/// installing off the loaded registry, and Program dispatching "virtualgun install" through a
+/// ModManager wired the way Program.Main actually wires one.</summary>
 public class VirtualGunWiringTests
 {
     static Task<int> Run(ModManager mm, params string[] args) => Program.Run(Cli.Parse(args), mm);
@@ -25,49 +25,33 @@ public class VirtualGunWiringTests
         new("dyzt/vrlf-virtual-gun", version, "vrlf-virtual-gun.zip", Installer.Sha256Hex(zip));
 
     [Fact]
-    public async Task Menu_reports_status_without_installing_when_already_current()
+    public async Task List_reports_the_installed_version_and_a_pending_update()
     {
+        var zip = ReleaseZip();
+        var (mm, _, _) = DemoManager.Build(DemoManager.TempPaths(), virtualGunInfo: Info("v1.1.0", zip), virtualGunZip: zip,
+            virtualGunState: new FakeVirtualGunState { Version = "1.0.0" });
+
+        var list = await mm.List();
+
+        Assert.True(list.VirtualGunInstalled);
+        Assert.Equal("1.0.0", list.VirtualGunVersion);
+        Assert.Equal("1.1.0", list.VirtualGunUpdate);
+    }
+
+    [Fact]
+    public async Task Install_runs_the_installer_even_when_already_current()
+    {
+        // The menu's Reinstall row: repairs a broken driver and re-pins the lane paths.
         var zip = ReleaseZip();
         var info = Info("v1.0.0", zip);
         var runner = new FakeElevatedRunner(0);
         var (mm, _, _) = DemoManager.Build(DemoManager.TempPaths(), virtualGunInfo: info, virtualGunZip: zip,
             virtualGunState: new FakeVirtualGunState { Version = "1.0.0" }, virtualGunRunner: runner);
 
-        var report = await mm.VirtualGunMenu();
+        var report = await mm.VirtualGunInstall();
 
         Assert.True(report.Ok, string.Join("; ", report.Results.Select(r => r.Message)));
-        Assert.Empty(runner.Runs);
-        Assert.Contains("installed v1.0.0", Assert.Single(report.Results).Message);
-    }
-
-    [Fact]
-    public async Task Menu_installs_when_not_installed()
-    {
-        var zip = ReleaseZip();
-        var info = Info("v1.0.0", zip);
-        var runner = new FakeElevatedRunner(0);
-        var (mm, _, _) = DemoManager.Build(DemoManager.TempPaths(), virtualGunInfo: info, virtualGunZip: zip,
-            virtualGunState: new FakeVirtualGunState(), virtualGunRunner: runner);
-
-        var report = await mm.VirtualGunMenu();
-
-        Assert.True(report.Ok, string.Join("; ", report.Results.Select(r => r.Message)));
-        Assert.Single(runner.Runs);
-    }
-
-    [Fact]
-    public async Task Menu_installs_when_the_pinned_version_differs_from_installed()
-    {
-        var zip = ReleaseZip();
-        var info = Info("v1.1.0", zip);
-        var runner = new FakeElevatedRunner(0);
-        var (mm, _, _) = DemoManager.Build(DemoManager.TempPaths(), virtualGunInfo: info, virtualGunZip: zip,
-            virtualGunState: new FakeVirtualGunState { Version = "1.0.0" }, virtualGunRunner: runner);
-
-        var report = await mm.VirtualGunMenu();
-
-        Assert.True(report.Ok, string.Join("; ", report.Results.Select(r => r.Message)));
-        Assert.Single(runner.Runs);
+        Assert.Equal("install", Assert.Single(runner.Runs).Args);
     }
 
     [Fact]

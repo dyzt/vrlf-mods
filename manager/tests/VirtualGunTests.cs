@@ -203,6 +203,39 @@ public class VirtualGunTests
     }
 
     [Fact]
+    public async Task Install_while_another_setup_runs_says_to_wait()
+    {
+        var zip = ReleaseZip();
+        var info = Info(zip);
+        var (gun, _, _) = Build(zip, info, exitCode: VirtualGun.SetupBusy);
+        var r = await gun.Install(info);
+        Assert.False(r.Ok);
+        Assert.Contains("still running", r.Message);
+    }
+
+    [Fact]
+    public void Uninstall_while_another_setup_runs_says_to_wait()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "vrlf-vg-busy-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        File.WriteAllText(Path.Combine(dir, VirtualGun.SetupExe), "exe");
+        var info = Info(ReleaseZip());
+        var (gun, _, _) = Build(null, info, exitCode: VirtualGun.SetupBusy,
+            state: new FakeVirtualGunState { Version = "1.0.0", Dir = dir });
+        var r = gun.Uninstall();
+        Assert.False(r.Ok);
+        Assert.Contains("still running", r.Message);
+    }
+
+    [Fact]
+    public void InstalledVersion_drops_a_leading_v()
+    {
+        var info = Info(ReleaseZip());
+        Assert.Equal("1.0.3", Build(null, info, state: new FakeVirtualGunState { Version = "v1.0.3" }).gun.InstalledVersion());
+        Assert.Null(Build(null, info).gun.InstalledVersion());
+    }
+
+    [Fact]
     public void Uninstall_runs_the_installed_setup_elevated()
     {
         var dir = Path.Combine(Path.GetTempPath(), "vrlf-vg-inst-" + Guid.NewGuid().ToString("N"));
