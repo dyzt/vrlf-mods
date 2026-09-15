@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "vigembus": { "repo": "nefarius/ViGEmBus", "version": "v1.22.0" },
-  "virtualgun": { "repo": "dyzt/vrlf-virtual-gun", "version": "v1.0.2", "zip": "vrlf-virtual-gun-1.0.2.zip", "sha256": "63ba5c61a42abd93df8317a817285557dfd59c96eb97e3f2f36fb7771b490cb9" },
+  "virtualgun": { "repo": "dyzt/vrlf-virtual-gun", "version": "v1.0.3", "zip": "vrlf-virtual-gun-1.0.3.zip", "sha256": "7c2d0faa833f02b9b52387072977a22884fafe3d9d8cd69bfc8b4905cf1b780e" },
   "mods": [
     { "id": "hotd1", "name": "House of the Dead: Remake VRLF Mod",
       "version": "1.0.1", "zip": "mods/hotd1/dist/hotd1-v1.0.1.zip", "sha256": "1e924004ecd19bc0ffa928a304b05f89bf5cbc4b77c304962906f011fd69cf9d",
