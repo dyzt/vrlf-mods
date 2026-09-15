@@ -99,7 +99,7 @@ public static class TuiModel
             rows.Add(new(RowKind.Action, "Uninstall", ActionKind.GunUninstall,
                 Help: "Removes the driver and its virtual lightguns. Close VRLF first." + Admin));
         rows.Add(new(RowKind.Separator, "", Selectable: false));
-        rows.Add(new(RowKind.Info, "Used by profiles with aim_mode hid, such as TeknoParrot RawInput games.", Selectable: false));
+        rows.Add(new(RowKind.Info, "Used by profiles with aim_mode hid, for games that read each mouse separately.", Selectable: false));
         return rows;
     }
 
