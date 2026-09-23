@@ -70,6 +70,7 @@ internal static class Program
                     }, p.Json);
                 case "config":    return await Config(p, mm);
                 case "path":      return await GamePath(p, mm);
+                case "emulator": return await Emulator(p, mm);
                 default: Console.Error.WriteLine("error: unknown command"); return 1;
             }
         }
@@ -97,6 +98,37 @@ internal static class Program
         if (p.Json) Output.Json(g, VrlfJson.Default.GameStatus);
         else Console.WriteLine(Output.GamePathText(g));
         return 0;
+    }
+
+    private static async Task<int> Emulator(ParsedArgs p, ModManager mm)
+    {
+        var emu = mm.Emulators;
+        switch (p.Sub)
+        {
+            case "list":
+            {
+                var all = await emu.List();
+                if (p.Json) Output.Json(new EmulatorListReport(all), VrlfJson.Default.EmulatorListReport);
+                else Output.EmulatorListText(all);
+                return 0;
+            }
+            case "status":
+            {
+                var s = await emu.Status(p.Id!);
+                if (s is null) return Fail("emulator", "", $"unknown emulator id '{p.Id}'", p.Json);
+                if (p.Json) Output.Json(s, VrlfJson.Default.EmulatorStatus); else Output.EmulatorStatusText(s);
+                return 0;
+            }
+            case "path":
+                if (p.Clear) return Report(await emu.ClearFolder(p.Id!), p.Json);
+                if (p.Path is not null) return Report(await emu.SetFolder(p.Id!, p.Path), p.Json);
+                goto case "status";
+            case "install": return Report(await emu.Install(p.Id!, p.Value), p.Json);
+            case "uninstall": return Report(await emu.Uninstall(p.Id!, p.Value), p.Json);
+            case "update": return Report(await emu.Update(p.Id!), p.Json);
+            case "reapply": return Report(await emu.Reapply(p.Id!), p.Json);
+            default: return Fail("emulator", "", "unknown emulator subcommand", p.Json);
+        }
     }
 
     private static int Report(ActionReport r, bool json)

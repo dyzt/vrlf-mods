@@ -7,6 +7,12 @@ public static class Cli
 {
     private static readonly HashSet<string> NeedId = new() { "install", "uninstall", "status", "path" };
 
+    private static readonly HashSet<string> EmuSubs =
+        new() { "list", "status", "path", "install", "uninstall", "update", "reapply" };
+
+    private const string EmuUsage =
+        "usage: emulator list | status <id> | path <id> [<dir>|--clear] | install <id> [<option>] | uninstall <id> [<option>] | update <id> | reapply <id>";
+
     public static ParsedArgs Parse(string[] args)
     {
         if (args.Length == 0) return new("menu", null, null, null, false, null);
@@ -34,11 +40,30 @@ public static class Cli
             }
         }
 
-        var known = new[] { "list", "status", "install", "uninstall", "update", "vigembus", "virtualgun", "menu", "config", "path" };
+        var known = new[] { "list", "status", "install", "uninstall", "update", "vigembus", "virtualgun", "menu", "config", "path", "emulator" };
         if (!known.Contains(cmd)) return Err(cmd, $"unknown command '{cmd}'");
 
         string? id = pos.Count > 0 ? pos[0] : null;
         string? sub = null, value = null; bool flagOn = false;
+
+        if (cmd == "emulator")
+        {
+            if (appid is not null || path is not null)
+                return Err(cmd, "--game and --path are not used by emulator commands");
+            if (pos.Count == 0) return Err(cmd, EmuUsage);
+            var esub = pos[0].ToLowerInvariant();
+            if (!EmuSubs.Contains(esub)) return Err(cmd, $"unknown emulator subcommand '{pos[0]}'");
+            if (pos.Count > 3) return Err(cmd, EmuUsage);
+            string? eid = pos.Count > 1 ? pos[1] : null;
+            string? arg = pos.Count > 2 ? pos[2] : null;
+            if (esub == "list") { if (eid is not null) return Err(cmd, "emulator list takes no id"); }
+            else if (eid is null) return Err(cmd, $"emulator {esub} needs an emulator id");
+            if (arg is not null && esub is not ("path" or "install" or "uninstall")) return Err(cmd, EmuUsage);
+            if (clear && esub != "path") return Err(cmd, "--clear is only for emulator path");
+            if (clear && arg is not null) return Err(cmd, "emulator path <id> --clear takes no folder");
+            return new(cmd, eid, null, esub == "path" ? arg : null, json, null,
+                Sub: esub, Value: esub == "path" ? null : arg, Clear: clear);
+        }
 
         if (cmd == "virtualgun" && id is not null)
         {

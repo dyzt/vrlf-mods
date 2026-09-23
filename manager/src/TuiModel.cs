@@ -69,6 +69,19 @@ public static class TuiModel
         return rows;
     }
 
+    /// <summary>One status for an emulator row: an update beats what is installed, which beats the folder state.</summary>
+    public static (string Glyph, string Text) EmulatorState(EmulatorStatus e)
+    {
+        var installed = e.Options.Where(o => o.InstalledVersion is not null).ToList();
+        if (installed.Any(o => o.InstalledVersion != o.Version)) return ("⚠", "update available");
+        if (installed.Count > 0)
+            return ("●", e.Options.Count == 1
+                ? $"installed v{installed[0].InstalledVersion}"
+                : string.Join(" + ", installed.Select(o => o.Short)));
+        if (!e.FolderChosen) return ("○", "folder not chosen");
+        return ("○", "not installed");
+    }
+
     public static string VirtualGunStatus(ListReport r)
     {
         if (!r.VirtualGunInstalled) return "○ not installed";
