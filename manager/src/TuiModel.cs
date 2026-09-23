@@ -5,7 +5,7 @@ public enum RowKind { Header, Action, Toggle, Separator, Info }
 public enum TuiKey { Up, Down, Enter, Back, Quit, Refresh, Other }
 public enum ActionKind { None, Open, Back, Quit, Install, Reinstall, Uninstall, Update, Vigem, VirtualGun, Refresh,
                          Toggle, SetPath, ClearPath, GunInstall, GunUninstall,
-                         EmuOpen, EmuToggle, EmuSetFolder, EmuUseSuggested, EmuClearFolder, EmuUpdate, EmuReapply }
+                         EmuOpen, EmuToggle, EmuSetFolder, EmuClearFolder, EmuUpdate, EmuReapply }
 
 public record MenuRow(RowKind Kind, string Text, ActionKind Action = ActionKind.None,
     string? ModId = null, string? ToggleKey = null, bool? ToggleOn = null, long? Appid = null,
@@ -93,35 +93,35 @@ public static class TuiModel
             return ("●", e.Options.Count == 1
                 ? $"installed v{installed[0].InstalledVersion}"
                 : string.Join(" + ", installed.Select(o => o.Short)));
-        if (!e.FolderChosen) return ("○", "folder not chosen");
+        if (e.Folder is null && e.Suggested is null) return ("○", "folder not chosen");
         return ("○", "not installed");
     }
 
     public static string EmulatorFolderText(EmulatorStatus e)
     {
-        if (e.Folder is null) return "Settings folder: not chosen";
+        if (e.Folder is null) return $"Settings folder: {e.Suggested ?? "not chosen"}";
         if (!e.FolderExists) return $"Settings folder: {e.Folder}  (missing)";
         return $"Settings folder: {e.Folder}";
     }
 
     /// <summary>The emulator screen: folder first, then one row per option, then the actions.
-    /// No help or notes: the rows are the whole screen.</summary>
+    /// No help or notes: the rows are the whole screen. A found main install stands in as the
+    /// folder until one is chosen; installing takes it.</summary>
     public static List<MenuRow> EmulatorRows(EmulatorStatus e)
     {
         var rows = new List<MenuRow>
         {
             new(RowKind.Action, EmulatorFolderText(e), ActionKind.EmuSetFolder, ModId: e.Id),
         };
-        if (e.Folder is null && e.Suggested is not null)
-            rows.Add(new(RowKind.Action, $"Use your main install: {e.Suggested}", ActionKind.EmuUseSuggested, ModId: e.Id));
         rows.Add(new(RowKind.Separator, "", Selectable: false));
 
+        bool folderReady = e.Folder is null ? e.Suggested is not null : e.FolderExists;
         foreach (var o in e.Options)
         {
             bool installed = o.InstalledVersion is not null;
             var required = o.Requires is null ? null : e.Options.FirstOrDefault(x => x.Id == o.Requires);
             bool reqMet = o.Requires is null || required?.InstalledVersion is not null;
-            bool enabled = installed || (e.FolderChosen && e.FolderExists && reqMet);
+            bool enabled = installed || (folderReady && reqMet);
             rows.Add(new(RowKind.Toggle, $"{o.Label,-28} v{o.InstalledVersion ?? o.Version}", ActionKind.EmuToggle,
                 ModId: e.Id, ToggleKey: o.Id, ToggleOn: installed, Enabled: enabled));
         }

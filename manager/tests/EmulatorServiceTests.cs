@@ -64,13 +64,22 @@ public class EmulatorServiceTests
         Assert.False((await rig.Svc.Install("testemu", null)).Ok);   // nothing installs until chosen
     }
 
+    // The menu shows a found main install as the folder, so installing from it takes that folder.
     [Fact]
-    public async Task UseSuggested_chooses_the_found_folder()
+    public async Task Install_orSuggested_takes_the_main_install_as_the_folder()
     {
+        Assert.False((await Build().Svc.Install("testemu", null, orSuggested: true)).Ok);   // nothing found
+
         var rig = Build();
-        EmuFixture.Write(Path.Combine(rig.Docs, "TestEmu"), "emu.ini", "[A]\r\n");
-        Assert.True((await rig.Svc.UseSuggested("testemu")).Ok);
-        Assert.Equal(Path.Combine(rig.Docs, "TestEmu"), (await rig.Svc.Status("testemu"))!.Folder);
+        var main = Path.Combine(rig.Docs, "TestEmu");
+        EmuFixture.Write(main, "emu.ini", "[A]\r\n");
+
+        Assert.True((await rig.Svc.Install("testemu", null, orSuggested: true)).Ok);
+
+        var s = (await rig.Svc.Status("testemu"))!;
+        Assert.Equal(main, s.Folder);
+        Assert.True(s.Locked);
+        Assert.NotNull(rig.Receipts.Load("testemu", "base"));
     }
 
     [Fact]
@@ -207,7 +216,6 @@ public class EmulatorServiceTests
                  {
                      await rig.Svc.SetFolder("testemu", SettingsFolder()),
                      await rig.Svc.ClearFolder("testemu"),
-                     await rig.Svc.UseSuggested("testemu"),
                  })
         {
             Assert.False(res.Ok);

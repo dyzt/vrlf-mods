@@ -105,18 +105,13 @@ public static class Tui
                     break;
                 case ActionKind.EmuToggle:
                     message = await Working(() => action.ToggleOn
-                        ? mm.Emulators.Install(action.ModId!, action.ToggleKey)
+                        ? mm.Emulators.Install(action.ModId!, action.ToggleKey, orSuggested: true)
                         : mm.Emulators.Uninstall(action.ModId!, action.ToggleKey));
                     list = await mm.List();
                     break;
                 case ActionKind.EmuSetFolder:
                     message = await PromptForEmulatorFolder(mm, list, action.ModId!);
                     list = await mm.List();
-                    break;
-                case ActionKind.EmuUseSuggested:
-                    message = await Working(() => mm.Emulators.UseSuggested(action.ModId!));
-                    list = await mm.List();
-                    state = state with { Cursor = 0 };
                     break;
                 case ActionKind.EmuClearFolder:
                     message = await Working(() => mm.Emulators.ClearFolder(action.ModId!));

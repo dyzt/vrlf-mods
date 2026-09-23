@@ -4,7 +4,8 @@ public record EmulatorOptionStatus(string Id, string Label, string Short, string
     string? InstalledVersion, string? Requires);
 
 /// <param name="Folder">Where options are (or will be) installed: the receipts' folder, else the chosen one.</param>
-/// <param name="Suggested">A found main install, offered only while no folder is chosen.</param>
+/// <param name="Suggested">A found main install, reported only while no folder is chosen. The menu
+/// shows it as the folder and installs there; the CLI only names it.</param>
 /// <param name="Locked">Something is installed, so the folder cannot change.</param>
 public record EmulatorStatus(string Id, string Name, string? Folder, bool FolderChosen, bool FolderExists,
     string? Suggested, bool Locked, List<EmulatorOptionStatus> Options,
@@ -70,17 +71,6 @@ public sealed class EmulatorService
         return Ok("path", emu.Id, $"{emu.Name}: using {check.Folder}");
     }
 
-    public async Task<ActionReport> UseSuggested(string id)
-    {
-        var (emu, fail) = await Find(id, "path");
-        if (emu is null) return fail!;
-        if (LockedMessage(emu) is { } locked) return Fail("path", locked, emu.Id);
-        var s = _folders.Suggest(emu);
-        return s is null
-            ? Fail("path", $"no {emu.Name} settings folder found; choose one", emu.Id)
-            : await SetFolder(id, s);
-    }
-
     public async Task<ActionReport> ClearFolder(string id)
     {
         var (emu, fail) = await Find(id, "path");
@@ -90,7 +80,9 @@ public sealed class EmulatorService
         return Ok("path", emu.Id, $"{emu.Name}: settings folder forgotten");
     }
 
-    public async Task<ActionReport> Install(string id, string? optionId)
+    /// <param name="orSuggested">With no folder chosen, take the found main install as the choice:
+    /// the menu shows it as the folder. The CLI leaves this off and asks for one.</param>
+    public async Task<ActionReport> Install(string id, string? optionId, bool orSuggested = false)
     {
         var (emu, fail) = await Find(id, "install");
         if (emu is null) return fail!;
@@ -98,6 +90,13 @@ public sealed class EmulatorService
         if (opt is null) return Fail("install", $"{emu.Id} has no option '{optionId ?? "base"}'", emu.Id);
 
         var folder = FolderFor(emu);
+        if (folder is null && orSuggested && _folders.Suggest(emu) is { } found)
+        {
+            var check = _folders.Resolve(emu, found);
+            if (!check.Ok) return Fail("install", check.Error!, emu.Id);
+            _folders.Choose(emu, check.Folder!);
+            folder = check.Folder;
+        }
         if (folder is null) return Fail("install", $"choose {emu.Name}'s settings folder first", emu.Id);
         if (!Directory.Exists(folder))
             return Fail("install", $"{emu.Name}'s settings folder is no longer there: {folder}", emu.Id);

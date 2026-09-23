@@ -46,14 +46,19 @@ public class TuiEmulatorTests
         Assert.Equal(mod.IndexOf("○"), emu.IndexOf("○"));
     }
 
+    // A found main install fills the folder row, and the options install there without a separate pick.
     [Fact]
-    public void The_folder_row_comes_first_and_a_suggestion_gets_its_own_row()
+    public void A_found_main_install_fills_the_folder_row()
     {
-        var rows = TuiModel.EmulatorRows(Emu(folder: null, suggested: @"C:\Users\x\AppData\Roaming\Dolphin Emulator"));
+        var e = Emu(folder: null, suggested: @"C:\Users\x\AppData\Roaming\Dolphin Emulator");
+        var rows = TuiModel.EmulatorRows(e);
         Assert.Equal(ActionKind.EmuSetFolder, rows[0].Action);
-        Assert.Contains("not chosen", rows[0].Text);
-        Assert.Equal(ActionKind.EmuUseSuggested, rows[1].Action);
-        Assert.Contains(@"Dolphin Emulator", rows[1].Text);
+        Assert.Equal(@"Settings folder: C:\Users\x\AppData\Roaming\Dolphin Emulator", rows[0].Text);
+        Assert.Equal(RowKind.Separator, rows[1].Kind);
+        Assert.True(rows.Single(r => r.ToggleKey == "base").Enabled);
+        Assert.False(rows.Single(r => r.ToggleKey == "calibration").Enabled);
+        Assert.DoesNotContain(rows, r => r.Action == ActionKind.EmuClearFolder);
+        Assert.EndsWith("not installed", TuiModel.ListRows(List(e)).Single(r => r.Action == ActionKind.EmuOpen).Text);
     }
 
     [Fact]
