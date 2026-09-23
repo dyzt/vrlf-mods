@@ -164,7 +164,7 @@
           "zip": "emulators/mame/dist/mame-base-v1.0.zip", "sha256": "f84dc41bf961f0905e1216a70dc9aafe5760b5ce2c7ff6f111832c0729a6f002" } ] },
     { "id": "flycast", "name": "Flycast", "processes": ["flycast"], "exe": ["flycast*.exe"],
       "locate": [], "marker": ["emu.cfg", "flycast*.exe"],
-      "needs": "virtualgun", "profile": "\"Flycast Light Gun (2P)\" on the Steam Workshop",
+      "needs": "virtualgun", "profile": "\"Flycast\" on the Steam Workshop",
       "notes": "Select the VRLF profile before starting Flycast. With Raw Input on, Flycast only hears a real keyboard. The gun mappings match English Windows; elsewhere, map the guns in Flycast's Controls.",
       "options": [
         { "id": "base", "label": "Base config", "short": "Base", "version": "1.0",
