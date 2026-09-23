@@ -9,13 +9,21 @@ internal static class Program
 
         var paths = AppPaths.Default();
         var http = new HttpFetcher();
+        var loader = new RegistryLoader(http, paths);
+        var vigem = new Vigem(new RegistryServiceDetector(), http, new ProcessLauncher(), paths);
+        var emuReceipts = new EmulatorReceiptStore(paths);
+        var emulators = new EmulatorService(loader,
+            new EmulatorFolders(new GamePathStore(paths), new SystemKnownFolders()),
+            new EmulatorInstaller(http, paths, emuReceipts, new SystemProcessProbe()),
+            emuReceipts, vigem);
         var mm = new ModManager(
-            new RegistryLoader(http, paths),
+            loader,
             new GameLocator(new SteamLocator(new RegistrySteamPaths()), new GamePathStore(paths)),
             new Installer(http, paths, new ReceiptStore(paths)),
             new ReceiptStore(paths),
-            new Vigem(new RegistryServiceDetector(), http, new ProcessLauncher(), paths),
-            virtualGun: new VirtualGun(new RegistryVirtualGunState(), http, new ElevatedRunner(), paths));
+            vigem,
+            virtualGun: new VirtualGun(new RegistryVirtualGunState(), http, new ElevatedRunner(), paths),
+            emulators: emulators);
 
         return await Run(p, mm);
     }

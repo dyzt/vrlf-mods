@@ -18,4 +18,6 @@ namespace VrlfMods;
 [JsonSerializable(typeof(Dictionary<string, string>))]
 [JsonSerializable(typeof(EmulatorReceipt))]
 [JsonSerializable(typeof(PackageSettings))]
+[JsonSerializable(typeof(EmulatorStatus))]
+[JsonSerializable(typeof(EmulatorListReport))]
 public partial class VrlfJson : JsonSerializerContext { }

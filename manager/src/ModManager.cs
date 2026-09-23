@@ -8,7 +8,7 @@ public record GameStatus(long Appid, string Name, bool Detected, string? Path, b
 public record ModStatus(string Id, string Name, string Version, string? InstalledVersion, List<GameStatus> Games);
 public record ListReport(string RegistrySource, List<ModStatus> Mods, bool VigemInstalled = false,
     bool VirtualGunInstalled = false, bool VirtualGunAvailable = false, string? VirtualGunUpdate = null,
-    string? VirtualGunVersion = null);
+    string? VirtualGunVersion = null, List<EmulatorStatus>? Emulators = null);
 public record ActionReport(bool Ok, string Command, List<OpResult> Results);
 
 public sealed class ModManager
@@ -20,19 +20,22 @@ public sealed class ModManager
     private readonly Vigem _vigem;
     private readonly ConfigController _config;
     private readonly VirtualGun? _virtualGun;
+    private readonly EmulatorService? _emulators;
 
     public ModManager(RegistryLoader loader, GameLocator locator, Installer installer,
                       ReceiptStore receipts, Vigem vigem, PatchRegistry? patches = null,
-                      VirtualGun? virtualGun = null)
+                      VirtualGun? virtualGun = null, EmulatorService? emulators = null)
     { _loader = loader; _locator = locator; _installer = installer; _receipts = receipts; _vigem = vigem;
-      _config = new ConfigController(patches ?? PatchRegistry.Default()); _virtualGun = virtualGun; }
+      _config = new ConfigController(patches ?? PatchRegistry.Default()); _virtualGun = virtualGun;
+      _emulators = emulators; }
 
     public async Task<ListReport> List()
     {
         var (reg, source) = await _loader.Load();
         return new ListReport(source, reg.Mods.Select(StatusFor).ToList(), _vigem.IsInstalled(),
             _virtualGun?.IsInstalled() ?? false, reg.Virtualgun is not null,
-            _virtualGun?.PendingUpdate(reg.Virtualgun), _virtualGun?.InstalledVersion());
+            _virtualGun?.PendingUpdate(reg.Virtualgun), _virtualGun?.InstalledVersion(),
+            _emulators?.StatusesFor(reg));
     }
 
     public async Task<ModStatus?> Status(string id)
@@ -168,6 +171,9 @@ public sealed class ModManager
 
     private VirtualGun Gun() =>
         _virtualGun ?? throw new InvalidOperationException("Virtual Lightgun support is not wired in");
+
+    public EmulatorService Emulators =>
+        _emulators ?? throw new InvalidOperationException("Emulator support is not wired in");
 
     public async Task<ActionReport> SetGamePath(string modId, long? appid, string dir)
     {
