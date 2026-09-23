@@ -139,6 +139,8 @@ public sealed class EmulatorService
     public Task<ActionReport> Update(string id) => Refresh(id, onlyIfNewer: true, "update");
     public Task<ActionReport> Reapply(string id) => Refresh(id, onlyIfNewer: false, "reapply");
 
+    /// <summary>Bases first, then what builds on them. Stops at the first failure: a base that
+    /// failed (possibly after its own uninstall) must not have add-ons reinstalled on top.</summary>
     async Task<ActionReport> Refresh(string id, bool onlyIfNewer, string cmd)
     {
         var (emu, fail) = await Find(id, cmd);
@@ -148,7 +150,9 @@ public sealed class EmulatorService
         {
             var r = _receipts.Load(emu.Id, o.Id);
             if (r is null) continue;
-            results.Add(await _installer.Refresh(emu, o, r, onlyIfNewer));
+            var res = await _installer.Refresh(emu, o, r, onlyIfNewer);
+            results.Add(res);
+            if (!res.Ok) break;
         }
         if (results.Count == 0) return Fail(cmd, $"nothing from {emu.Name} is installed", emu.Id);
         return new ActionReport(results.All(r => r.Ok), cmd, results);

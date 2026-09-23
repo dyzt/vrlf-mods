@@ -265,6 +265,10 @@ public sealed class EmulatorInstaller
         if (onlyIfNewer && string.Equals(opt.Version, current.Version, StringComparison.OrdinalIgnoreCase))
             return new OpResult(true, key, $"{opt.Label} is up to date (v{opt.Version})");
         if (RunningProcess(emu) is { } running) return new OpResult(false, key, CloseFirst(emu, running));
+        // Uninstall would find nothing to put back and drop the receipt and backups, and the
+        // install after it would fail: keep what is installed instead.
+        if (!Directory.Exists(current.Folder))
+            return new OpResult(false, key, $"kept v{current.Version}: the settings folder {current.Folder} is no longer there");
 
         var (bytes, err) = await FetchAndVerify(opt);
         if (bytes is null) return new OpResult(false, key, $"kept v{current.Version}: {err}");
@@ -275,15 +279,23 @@ public sealed class EmulatorInstaller
 
         // Anything of ours the user changed since install would otherwise be lost when Uninstall
         // reverts it to our own recorded prior - keep it aside first (mirrors Installer.Update).
+        // A copy that fails stops the update: nothing is removed.
         var kept = new List<string>();
         foreach (var f in current.Files)
         {
-            var p = Path.Combine(current.Folder, f.RelPath.Replace('/', Path.DirectorySeparatorChar));
-            if (!File.Exists(p)) continue;
-            if (string.Equals(Installer.Sha256HexFile(p), f.Sha256, StringComparison.OrdinalIgnoreCase)) continue;
-            var aside = p + $".bak-{current.Version}";
-            try { File.Copy(p, aside, overwrite: true); kept.Add(f.RelPath + $".bak-{current.Version}"); }
-            catch { /* best effort: never let this block the update itself */ }
+            var p = SafeResolve(current.Folder, f.RelPath);
+            if (p is null) continue;
+            try
+            {
+                if (!File.Exists(p)) continue;
+                if (string.Equals(Installer.Sha256HexFile(p), f.Sha256, StringComparison.OrdinalIgnoreCase)) continue;
+                File.Copy(p, p + $".bak-{current.Version}", overwrite: true);
+                kept.Add(f.RelPath + $".bak-{current.Version}");
+            }
+            catch (Exception ex)
+            {
+                return new OpResult(false, key, $"kept v{current.Version}: could not keep your changed {f.RelPath} ({ex.Message})");
+            }
         }
 
         var un = Uninstall(emu, current);

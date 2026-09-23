@@ -442,6 +442,108 @@ public class EmulatorUninstallTests
         Assert.Equal("V2CONTENT", EmuFixture.Read(folder, "ctrlr/vrlf.cfg"));
     }
 
+    // Regression: a failed keep-aside copy was swallowed, then Uninstall deleted the user's
+    // changed file anyway. Losing that edit must stop the update before anything is removed.
+    [Fact]
+    public async Task Update_that_cannot_keep_a_changed_file_keeps_the_installed_version()
+    {
+        var paths = EmuFixture.TempPaths();
+        var folder = EmuFixture.TempFolder();
+        EmuFixture.Write(folder, "emu.ini", Fixture["emu.ini"]);
+        var z1 = EmuFixture.Package(V1, ("ctrlr/vrlf.cfg", "V1CONTENT"));
+        var z2 = EmuFixture.Package(V2, ("ctrlr/vrlf.cfg", "V2CONTENT"));
+        var v1 = EmuFixture.Option("base", z1, "1.0");
+        var v2 = EmuFixture.Option("base", z2, "2.0");
+        var emu = EmuFixture.Entry(v2);
+        var (inst, receipts, _) = EmuFixture.MakeInstaller(paths, (v1, z1), (v2, z2));
+        Assert.True((await inst.Install(emu, v1, folder)).Ok);
+        EmuFixture.Write(folder, "ctrlr/vrlf.cfg", "USER EDITED");
+        Directory.CreateDirectory(EmuFixture.PathOf(folder, "ctrlr/vrlf.cfg.bak-1.0"));   // the copy can't land
+        var before = EmuFixture.Read(folder, "emu.ini");
+
+        var res = await inst.Refresh(emu, v2, receipts.Load("testemu", "base")!, onlyIfNewer: true);
+
+        Assert.False(res.Ok);
+        Assert.Contains("kept v1.0: could not keep your changed ctrlr/vrlf.cfg (", res.Message);
+        Assert.Equal("USER EDITED", EmuFixture.Read(folder, "ctrlr/vrlf.cfg"));
+        Assert.Equal(before, EmuFixture.Read(folder, "emu.ini"));
+        Assert.Equal("1.0", receipts.Load("testemu", "base")!.Version);
+    }
+
+    // An installed file that cannot even be read is treated like one that cannot be kept aside:
+    // the update stops as a failed result instead of throwing, and nothing is removed.
+    [Fact]
+    public async Task Update_that_cannot_read_an_installed_file_keeps_the_installed_version()
+    {
+        var paths = EmuFixture.TempPaths();
+        var folder = EmuFixture.TempFolder();
+        var z1 = EmuFixture.Package(V1, ("ctrlr/vrlf.cfg", "V1CONTENT"));
+        var z2 = EmuFixture.Package(V2, ("ctrlr/vrlf.cfg", "V2CONTENT"));
+        var v1 = EmuFixture.Option("base", z1, "1.0");
+        var v2 = EmuFixture.Option("base", z2, "2.0");
+        var emu = EmuFixture.Entry(v2);
+        var (inst, receipts, _) = EmuFixture.MakeInstaller(paths, (v1, z1), (v2, z2));
+        Assert.True((await inst.Install(emu, v1, folder)).Ok);
+        var r = receipts.Load("testemu", "base")!;
+
+        OpResult res;
+        using (new FileStream(EmuFixture.PathOf(folder, "ctrlr/vrlf.cfg"), FileMode.Open, FileAccess.Read, FileShare.None))
+            res = await inst.Refresh(emu, v2, r, onlyIfNewer: true);
+
+        Assert.False(res.Ok);
+        Assert.Contains("kept v1.0: could not keep your changed ctrlr/vrlf.cfg (", res.Message);
+        Assert.Equal("V1CONTENT", EmuFixture.Read(folder, "ctrlr/vrlf.cfg"));
+        Assert.Equal("1.0", receipts.Load("testemu", "base")!.Version);
+    }
+
+    // A damaged receipt path that leads outside the settings folder is skipped, never copied.
+    [Fact]
+    public async Task Update_never_keeps_a_copy_outside_the_settings_folder()
+    {
+        var (inst, receipts, emu, _, v2, folder) = await V1Installed();
+        var outside = Path.Combine(Path.GetDirectoryName(folder)!, "outside.cfg");
+        File.WriteAllText(outside, "NOT OURS");
+        var damaged = receipts.Load("testemu", "base")! with
+        {
+            Files = new() { new InstalledFile("../outside.cfg", "00") },
+        };
+
+        var res = await inst.Refresh(emu, v2, damaged, onlyIfNewer: true);
+
+        Assert.True(res.Ok, res.Message);
+        Assert.False(File.Exists(outside + ".bak-1.0"));
+        Assert.Equal("NOT OURS", File.ReadAllText(outside));
+    }
+
+    // Regression: with the folder gone, Update uninstalled (dropping the receipt and the
+    // backups of what the install had replaced) and then failed to install.
+    [Fact]
+    public async Task Update_with_a_missing_folder_keeps_the_receipt()
+    {
+        var paths = EmuFixture.TempPaths();
+        var folder = EmuFixture.TempFolder();
+        EmuFixture.Write(folder, "emu.ini", Fixture["emu.ini"]);
+        EmuFixture.Write(folder, "ctrlr/vrlf.cfg", "OLD");
+        var z1 = EmuFixture.Package(V1, ("ctrlr/vrlf.cfg", "V1CONTENT"));
+        var z2 = EmuFixture.Package(V2, ("ctrlr/vrlf.cfg", "V2CONTENT"));
+        var v1 = EmuFixture.Option("base", z1, "1.0");
+        var v2 = EmuFixture.Option("base", z2, "2.0");
+        var emu = EmuFixture.Entry(v2);
+        var (inst, receipts, _) = EmuFixture.MakeInstaller(paths, (v1, z1), (v2, z2));
+        Assert.True((await inst.Install(emu, v1, folder)).Ok);
+        var backupDir = paths.EmuBackupDir("testemu", "base");
+        Assert.True(Directory.Exists(backupDir));
+        Directory.Delete(folder, recursive: true);
+
+        var res = await inst.Refresh(emu, v2, receipts.Load("testemu", "base")!, onlyIfNewer: true);
+
+        Assert.False(res.Ok);
+        Assert.Contains($"kept v1.0: the settings folder {folder} is no longer there", res.Message);
+        Assert.Equal("1.0", receipts.Load("testemu", "base")!.Version);
+        Assert.Equal("OLD", EmuFixture.Read(backupDir, "ctrlr/vrlf.cfg"));
+        Assert.False(Directory.Exists(folder));
+    }
+
     [Fact]
     public async Task Update_that_fails_after_removing_says_so()
     {

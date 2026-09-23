@@ -13,20 +13,25 @@ public class EmulatorServiceTests
 
     static Rig Build(bool vigem = true)
     {
-        var paths = EmuFixture.TempPaths();
-        var docs = EmuFixture.TempFolder("Documents");
         var zb = EmuFixture.Package(BaseSettings);
         var za = EmuFixture.Package(AddonSettings);
         var ob = EmuFixture.Option("base", zb);
         var oa = EmuFixture.Option("addon", za, requires: "base");
-        var emu = EmuFixture.Entry(ob, oa);
+        return Make(EmuFixture.TempPaths(), EmuFixture.TempFolder("Documents"), vigem, (ob, zb), (oa, za));
+    }
+
+    /// <summary>A service whose registry lists exactly these options, each zip served at its own
+    /// URL. Pass another rig's paths to see its receipts through a newer registry.</summary>
+    static Rig Make(AppPaths paths, string docs, bool vigem, params (EmulatorOption opt, byte[] zip)[] served)
+    {
+        var emu = EmuFixture.Entry(served.Select(s => s.opt).ToArray());
         var reg = new ModRegistry(1, new VigemInfo("nefarius/ViGEmBus", "v1.22.0"), new(), null, new() { emu });
-        var http = new FakeHttpFetcher(new()
+        var map = new Dictionary<string, byte[]?>
         {
             [RegistryLoader.RawBase + "/mods.json"] = JsonSerializer.SerializeToUtf8Bytes(reg, VrlfJson.Default.ModRegistry),
-            [EmulatorInstaller.ZipUrl(ob)] = zb,
-            [EmulatorInstaller.ZipUrl(oa)] = za,
-        });
+        };
+        foreach (var (o, z) in served) map[EmulatorInstaller.ZipUrl(o)] = z;
+        var http = new FakeHttpFetcher(map);
         var receipts = new EmulatorReceiptStore(paths);
         var probe = new FakeProcessProbe();
         var svc = new EmulatorService(new RegistryLoader(http, paths),
@@ -185,6 +190,63 @@ public class EmulatorServiceTests
         var rig = Build();
         Assert.False((await rig.Svc.Update("testemu")).Ok);
         Assert.False((await rig.Svc.Reapply("testemu")).Ok);
+    }
+
+    /// <summary>Base and add-on installed at v1.0 into a fresh settings folder.</summary>
+    static async Task<(Rig rig, string dir)> BothInstalled()
+    {
+        var rig = Build();
+        var dir = SettingsFolder();
+        await rig.Svc.SetFolder("testemu", dir);
+        Assert.True((await rig.Svc.Install("testemu", "base")).Ok);
+        Assert.True((await rig.Svc.Install("testemu", "addon")).Ok);
+        return (rig, dir);
+    }
+
+    static string ReceiptJson(Rig rig, string opt) =>
+        JsonSerializer.Serialize(rig.Receipts.Load("testemu", opt)!, VrlfJson.Default.EmulatorReceipt);
+
+    // Regression: Update kept going after a failure, so an add-on could be reinstalled on top of
+    // a base that had just failed (possibly after its own uninstall).
+    [Fact]
+    public async Task Update_stops_at_the_first_failure()
+    {
+        var (v1, _) = await BothInstalled();
+        var badBase = EmuFixture.Package("""{ "edits": [ { "file": "emu.ini", "format": "toml", "section": "A", "key": "base", "value": "2" } ] }""");
+        var addon2 = EmuFixture.Package("""{ "edits": [ { "file": "emu.ini", "format": "ini", "section": "A", "key": "addon", "value": "2" } ] }""");
+        var v2 = Make(v1.Paths, v1.Docs, true,
+            (EmuFixture.Option("base", badBase, "2.0"), badBase),
+            (EmuFixture.Option("addon", addon2, "2.0", requires: "base"), addon2));
+
+        var res = await v2.Svc.Update("testemu");
+
+        Assert.False(res.Ok);
+        Assert.Single(res.Results);
+        Assert.Equal("testemu/base", res.Results[0].GameKey);
+        Assert.Equal("1.0", v2.Receipts.Load("testemu", "addon")!.Version);
+    }
+
+    // Update never cascades: refreshing the base is its own uninstall and install, so an add-on
+    // on top of it is neither removed nor re-applied.
+    [Fact]
+    public async Task Update_of_the_base_leaves_the_addon_installed()
+    {
+        var (v1, dir) = await BothInstalled();
+        var addonBefore = ReceiptJson(v1, "addon");
+        var base2 = EmuFixture.Package("""{ "edits": [ { "file": "emu.ini", "format": "ini", "section": "A", "key": "base", "value": "2" } ] }""");
+        var addon = EmuFixture.Package(AddonSettings);
+        var v2 = Make(v1.Paths, v1.Docs, true,
+            (EmuFixture.Option("base", base2, "2.0"), base2),
+            (EmuFixture.Option("addon", addon, "1.0", requires: "base"), addon));
+
+        var res = await v2.Svc.Update("testemu");
+
+        Assert.True(res.Ok, string.Join("; ", res.Results.Select(r => r.Message)));
+        Assert.Equal("2.0", v2.Receipts.Load("testemu", "base")!.Version);
+        Assert.Equal(addonBefore, ReceiptJson(v2, "addon"));
+        var t = SettingsText.Load(EmuFixture.PathOf(dir, "emu.ini"));
+        Assert.Equal("1", IniEditor.Get(t, "A", "addon"));
+        Assert.Equal("2", IniEditor.Get(t, "A", "base"));
     }
 
     [Fact]
