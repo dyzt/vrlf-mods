@@ -1,0 +1,1601 @@
+{
+  "version": "1.1",
+  "edits": [
+    {
+      "file": "GameSettings/R8LE20.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource0",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/R8LE20.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource1",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/R8LE20.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile1",
+      "value": "VRLF-CHICKENBLASTER-P1"
+    },
+    {
+      "file": "GameSettings/R8LE20.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile2",
+      "value": "VRLF-CHICKENBLASTER-P2"
+    },
+    {
+      "file": "GameSettings/R8LE20.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType0",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/R8LE20.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType1",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/R8LE20.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType2",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/R8LE20.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType3",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RBUE08.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource0",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/RBUE08.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource1",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/RBUE08.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile1",
+      "value": "VRLF-REUmbrella-P1"
+    },
+    {
+      "file": "GameSettings/RBUE08.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile2",
+      "value": "VRLF-REUmbrella-P2"
+    },
+    {
+      "file": "GameSettings/RBUE08.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType0",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RBUE08.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType1",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RBUE08.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType2",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RBUE08.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType3",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RBUE08.ini",
+      "format": "ini",
+      "section": "Core",
+      "key": "FastDiscSpeed",
+      "value": "True"
+    },
+    {
+      "file": "GameSettings/RGDEA4.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource0",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/RGDEA4.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource1",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/RGDEA4.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile1",
+      "value": "VRLF-TARGETTERROR-P1"
+    },
+    {
+      "file": "GameSettings/RGDEA4.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile2",
+      "value": "VRLF-TARGETTERROR-P2"
+    },
+    {
+      "file": "GameSettings/RGDEA4.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType0",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RGDEA4.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType1",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RGDEA4.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType2",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RGDEA4.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType3",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RGDEA4.ini",
+      "format": "ini",
+      "section": "Video_Enhancements",
+      "key": "ForceFiltering",
+      "value": "False"
+    },
+    {
+      "file": "GameSettings/RGDEA4.ini",
+      "format": "ini",
+      "section": "Video_Settings",
+      "key": "SafeTextureCacheColorSamples",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RGDEA4.ini",
+      "format": "ini",
+      "section": "Video_Hacks",
+      "key": "FastTextureSampling",
+      "value": "False"
+    },
+    {
+      "file": "GameSettings/RGSE8P.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource0",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/RGSE8P.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource1",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/RGSE8P.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile1",
+      "value": "VRLF-GHOSTSQUAD-P1"
+    },
+    {
+      "file": "GameSettings/RGSE8P.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile2",
+      "value": "VRLF-GHOSTSQUAD-P2"
+    },
+    {
+      "file": "GameSettings/RGSE8P.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType0",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RGSE8P.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType1",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RGSE8P.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType2",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RGSE8P.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType3",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RHAE01.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource0",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/RHAE01.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource1",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/RHAE01.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile1",
+      "value": "VRLF-WiiPlay-P1"
+    },
+    {
+      "file": "GameSettings/RHAE01.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile2",
+      "value": "VRLF-WiiPlay-P2"
+    },
+    {
+      "file": "GameSettings/RHAE01.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType0",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RHAE01.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType1",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RHAE01.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType2",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RHAE01.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType3",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RHDE8P.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource0",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/RHDE8P.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource1",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/RHDE8P.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile1",
+      "value": "VRLF-HOTD23-P1"
+    },
+    {
+      "file": "GameSettings/RHDE8P.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile2",
+      "value": "VRLF-HOTD23-P2"
+    },
+    {
+      "file": "GameSettings/RHDE8P.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType0",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RHDE8P.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType1",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RHDE8P.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType2",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RHDE8P.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType3",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RHOE8P.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource0",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/RHOE8P.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource1",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/RHOE8P.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile1",
+      "value": "VRLF-HOTDOverkill-P1"
+    },
+    {
+      "file": "GameSettings/RHOE8P.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile2",
+      "value": "VRLF-HOTDOverkill-P2"
+    },
+    {
+      "file": "GameSettings/RHOE8P.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType0",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RHOE8P.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType1",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RHOE8P.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType2",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RHOE8P.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType3",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RHOE8P.ini",
+      "format": "ini",
+      "section": "Core",
+      "key": "FastDiscSpeed",
+      "value": "True"
+    },
+    {
+      "file": "GameSettings/RL6E69.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource0",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/RL6E69.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource1",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/RL6E69.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile1",
+      "value": "VRLF-NERF_ELITE-P1"
+    },
+    {
+      "file": "GameSettings/RL6E69.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile2",
+      "value": "VRLF-NERF_ELITE-P2"
+    },
+    {
+      "file": "GameSettings/RL6E69.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType0",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RL6E69.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType1",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RL6E69.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType2",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RL6E69.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType3",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RMRE5Z.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource0",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/RMRE5Z.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource1",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/RMRE5Z.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile1",
+      "value": "VRLF-COCOTOMC-P1"
+    },
+    {
+      "file": "GameSettings/RMRE5Z.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile2",
+      "value": "VRLF-COCOTOMC-P2"
+    },
+    {
+      "file": "GameSettings/RMRE5Z.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType0",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RMRE5Z.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType1",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RMRE5Z.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType2",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RMRE5Z.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType3",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RQ5E5G.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource0",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/RQ5E5G.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource1",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/RQ5E5G.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile1",
+      "value": "VRLF-MadDogMcCree-P1"
+    },
+    {
+      "file": "GameSettings/RQ5E5G.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile2",
+      "value": "VRLF-MadDogMcCree-P2"
+    },
+    {
+      "file": "GameSettings/RQ5E5G.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType0",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RQ5E5G.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType1",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RQ5E5G.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType2",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RQ5E5G.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType3",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RQ5E5G.ini",
+      "format": "ini",
+      "section": "Core",
+      "key": "FastDiscSpeed",
+      "value": "True"
+    },
+    {
+      "file": "GameSettings/RQ5E5G.ini",
+      "format": "ini",
+      "section": "Video_Enhancements",
+      "key": "ForceFiltering",
+      "value": "False"
+    },
+    {
+      "file": "GameSettings/RQ7E20.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource0",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/RQ7E20.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource1",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/RQ7E20.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile1",
+      "value": "VRLF-MARTIANPANIC-P1"
+    },
+    {
+      "file": "GameSettings/RQ7E20.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile2",
+      "value": "VRLF-MARTIANPANIC-P2"
+    },
+    {
+      "file": "GameSettings/RQ7E20.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType0",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RQ7E20.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType1",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RQ7E20.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType2",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RQ7E20.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType3",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RZJE69.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource0",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/RZJE69.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource1",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/RZJE69.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile1",
+      "value": "VRLF-DEADSPACE-P1"
+    },
+    {
+      "file": "GameSettings/RZJE69.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile2",
+      "value": "VRLF-DEADSPACE-P2"
+    },
+    {
+      "file": "GameSettings/RZJE69.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType0",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RZJE69.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType1",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RZJE69.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType2",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RZJE69.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType3",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RZPE01.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource0",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/RZPE01.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource1",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/RZPE01.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile1",
+      "value": "VRLF-LINKCROSSBOW-P1"
+    },
+    {
+      "file": "GameSettings/RZPE01.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile2",
+      "value": "VRLF-LINKCROSSBOW-P2"
+    },
+    {
+      "file": "GameSettings/RZPE01.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType0",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RZPE01.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType1",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RZPE01.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType2",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/RZPE01.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType3",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/S3AE5G.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource0",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/S3AE5G.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource1",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/S3AE5G.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile1",
+      "value": "VRLF-ATTACKMOVIES-P1"
+    },
+    {
+      "file": "GameSettings/S3AE5G.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile2",
+      "value": "VRLF-ATTACKMOVIES-P2"
+    },
+    {
+      "file": "GameSettings/S3AE5G.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType0",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/S3AE5G.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType1",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/S3AE5G.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType2",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/S3AE5G.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType3",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SBDE08.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource0",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/SBDE08.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource1",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/SBDE08.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile1",
+      "value": "VRLF-REDarkside-P1"
+    },
+    {
+      "file": "GameSettings/SBDE08.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile2",
+      "value": "VRLF-REDarkside-P2"
+    },
+    {
+      "file": "GameSettings/SBDE08.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType0",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SBDE08.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType1",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SBDE08.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType2",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SBDE08.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType3",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SBDE08.ini",
+      "format": "ini",
+      "section": "Core",
+      "key": "FastDiscSpeed",
+      "value": "True"
+    },
+    {
+      "file": "GameSettings/SBHEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource0",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/SBHEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource1",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/SBHEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile1",
+      "value": "VRLF-RemingtonBIRD-P1"
+    },
+    {
+      "file": "GameSettings/SBHEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile2",
+      "value": "VRLF-RemingtonBIRD-P2"
+    },
+    {
+      "file": "GameSettings/SBHEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType0",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SBHEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType1",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SBHEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType2",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SBHEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType3",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SBHEFP.ini",
+      "format": "ini",
+      "section": "Core",
+      "key": "CPUThread",
+      "value": "True"
+    },
+    {
+      "file": "GameSettings/SBSEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource0",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/SBSEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource1",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/SBSEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile1",
+      "value": "VRLF-RemingtonNA-P1"
+    },
+    {
+      "file": "GameSettings/SBSEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile2",
+      "value": "VRLF-RemingtonNA-P2"
+    },
+    {
+      "file": "GameSettings/SBSEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType0",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SBSEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType1",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SBSEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType2",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SBSEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType3",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SBSEFP.ini",
+      "format": "ini",
+      "section": "Core",
+      "key": "CPUThread",
+      "value": "True"
+    },
+    {
+      "file": "GameSettings/SJUE20.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource0",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/SJUE20.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource1",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/SJUE20.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile1",
+      "value": "VRLF-DINOSTRIKE-P1"
+    },
+    {
+      "file": "GameSettings/SJUE20.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile2",
+      "value": "VRLF-DINOSTRIKE-P2"
+    },
+    {
+      "file": "GameSettings/SJUE20.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType0",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SJUE20.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType1",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SJUE20.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType2",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SJUE20.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType3",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SRKEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource0",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/SRKEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource1",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/SRKEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile1",
+      "value": "VRLF-RemingtonALASKA-P1"
+    },
+    {
+      "file": "GameSettings/SRKEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile2",
+      "value": "VRLF-RemingtonALASKA-P2"
+    },
+    {
+      "file": "GameSettings/SRKEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType0",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SRKEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType1",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SRKEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType2",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SRKEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType3",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SRKEFP.ini",
+      "format": "ini",
+      "section": "Core",
+      "key": "CPUThread",
+      "value": "True"
+    },
+    {
+      "file": "GameSettings/SS7EFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource0",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/SS7EFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource1",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/SS7EFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile1",
+      "value": "VRLF-RemingtonAFRICA-P1"
+    },
+    {
+      "file": "GameSettings/SS7EFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile2",
+      "value": "VRLF-RemingtonAFRICA-P2"
+    },
+    {
+      "file": "GameSettings/SS7EFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType0",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SS7EFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType1",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SS7EFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType2",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SS7EFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType3",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SS7EFP.ini",
+      "format": "ini",
+      "section": "Core",
+      "key": "CPUThread",
+      "value": "True"
+    },
+    {
+      "file": "GameSettings/ST9E52.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource0",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/ST9E52.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource1",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/ST9E52.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile1",
+      "value": "VRLF-TopShotArcade-P1"
+    },
+    {
+      "file": "GameSettings/ST9E52.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile2",
+      "value": "VRLF-TopShotArcade-P2"
+    },
+    {
+      "file": "GameSettings/ST9E52.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType0",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/ST9E52.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType1",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/ST9E52.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType2",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/ST9E52.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType3",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/STDEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource0",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/STDEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource1",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/STDEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile1",
+      "value": "VRLF-RELOAD-P1"
+    },
+    {
+      "file": "GameSettings/STDEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile2",
+      "value": "VRLF-RELOAD-P2"
+    },
+    {
+      "file": "GameSettings/STDEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType0",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/STDEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType1",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/STDEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType2",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/STDEFP.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType3",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SW7EVN.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource0",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/SW7EVN.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource1",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/SW7EVN.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile1",
+      "value": "VRLF-GUNSLINGERS-P1"
+    },
+    {
+      "file": "GameSettings/SW7EVN.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile2",
+      "value": "VRLF-GUNSLINGERS-P2"
+    },
+    {
+      "file": "GameSettings/SW7EVN.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType0",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SW7EVN.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType1",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SW7EVN.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType2",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SW7EVN.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType3",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SW9EVN.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource0",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/SW9EVN.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource1",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/SW9EVN.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile1",
+      "value": "VRLF-WickedMonstersBlast-P1"
+    },
+    {
+      "file": "GameSettings/SW9EVN.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile2",
+      "value": "VRLF-WickedMonstersBlast-P2"
+    },
+    {
+      "file": "GameSettings/SW9EVN.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType0",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SW9EVN.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType1",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SW9EVN.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType2",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/SW9EVN.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType3",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/WB4EGL.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource0",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/WB4EGL.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource1",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/WB4EGL.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile1",
+      "value": "VRLF-WILDWESTGUNS-P1"
+    },
+    {
+      "file": "GameSettings/WB4EGL.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile2",
+      "value": "VRLF-WILDWESTGUNS-P2"
+    },
+    {
+      "file": "GameSettings/WB4EGL.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType0",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/WB4EGL.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType1",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/WB4EGL.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType2",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/WB4EGL.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType3",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/WFAEJS.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource0",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/WFAEJS.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource1",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/WFAEJS.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile1",
+      "value": "VRLF-FASTDRAWSD-P1"
+    },
+    {
+      "file": "GameSettings/WFAEJS.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile2",
+      "value": "VRLF-FASTDRAWSD-P2"
+    },
+    {
+      "file": "GameSettings/WFAEJS.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType0",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/WFAEJS.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType1",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/WFAEJS.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType2",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/WFAEJS.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType3",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/WHFETY.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource0",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/WHFETY.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteSource1",
+      "value": "1"
+    },
+    {
+      "file": "GameSettings/WHFETY.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile1",
+      "value": "VRLF-HeavyFireSO-P1"
+    },
+    {
+      "file": "GameSettings/WHFETY.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "WiimoteProfile2",
+      "value": "VRLF-HeavyFireSO-P2"
+    },
+    {
+      "file": "GameSettings/WHFETY.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType0",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/WHFETY.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType1",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/WHFETY.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType2",
+      "value": "0"
+    },
+    {
+      "file": "GameSettings/WHFETY.ini",
+      "format": "ini",
+      "section": "Controls",
+      "key": "PadType3",
+      "value": "0"
+    }
+  ]
+}

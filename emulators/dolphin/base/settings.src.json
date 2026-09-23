@@ -1,0 +1,9 @@
+{
+  "version": "1.0",
+  "edits": [
+    { "file": "Config/DSUClient.ini", "format": "ini", "section": "Server", "key": "Enabled", "value": "True" },
+    { "file": "Config/DSUClient.ini", "format": "ini", "section": "Server", "key": "Entries", "value": "vrlf-wiimotes:127.0.0.1:26760;vrlf-nunchuks:127.0.0.1:26761;" },
+    { "file": "Config/WiimoteNew.ini", "format": "ini", "section": "Wiimote1", "replaceFrom": "Config/Profiles/Wiimote/VRLF-Dolphin-Base.ini#Profile", "replace": [ "Source = 1" ] },
+    { "file": "Config/WiimoteNew.ini", "format": "ini", "section": "Wiimote2", "replaceFrom": "Config/Profiles/Wiimote/VRLF-Dolphin-Base-P2.ini#Profile", "replace": [ "Source = 1" ] }
+  ]
+}

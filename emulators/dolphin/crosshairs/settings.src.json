@@ -1,0 +1,12 @@
+{
+  "version": "1.1",
+  "edits": [
+    {
+      "file": "Config/GFX.ini",
+      "format": "ini",
+      "section": "Settings",
+      "key": "HiresTextures",
+      "value": "True"
+    }
+  ]
+}

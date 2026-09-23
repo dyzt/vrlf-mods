@@ -1,0 +1,19 @@
+{
+  "version": "1.0",
+  "edits": [
+    { "file": "mame.ini", "format": "mame", "key": "keyboardprovider", "value": "dinput" },
+    { "file": "mame.ini", "format": "mame", "key": "lightgunprovider", "value": "win32" },
+    { "file": "mame.ini", "format": "mame", "key": "lightgun", "value": "1" },
+    { "file": "mame.ini", "format": "mame", "key": "offscreen_reload", "value": "1" },
+    { "file": "mame.ini", "format": "mame", "key": "joystickprovider", "value": "xinput" },
+    { "file": "mame.ini", "format": "mame", "key": "joystick_deadzone", "value": "0" },
+    { "file": "mame.ini", "format": "mame", "key": "joystick_saturation", "value": "1.0" },
+    { "file": "mame.ini", "format": "mame", "key": "ctrlr", "value": "vrlf" },
+    { "file": "mame.ini", "format": "mame", "key": "adstick_device", "value": "joystick" },
+    { "file": "mame.ini", "format": "mame", "key": "lightgun_device", "value": "joystick" },
+    { "file": "mame.ini", "format": "mame", "key": "positional_device", "value": "joystick" },
+    { "file": "mame.ini", "format": "mame", "key": "paddle_device", "value": "joystick" },
+    { "file": "mame.ini", "format": "mame", "key": "dial_device", "value": "joystick" },
+    { "file": "mame.ini", "format": "mame", "key": "trackball_device", "value": "joystick" }
+  ]
+}

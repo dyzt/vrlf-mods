@@ -125,5 +125,42 @@
           { "key": "VerboseLog", "label": "Verbose log" }
         ]
       } }
+  ],
+  "emulators": [
+    { "id": "dolphin", "name": "Dolphin", "processes": ["Dolphin"], "exe": ["Dolphin.exe"],
+      "locate": ["%APPDATA%/Dolphin Emulator", "%DOCUMENTS%/Dolphin Emulator"], "marker": ["Config/Dolphin.ini"],
+      "portable": { "flag": ["portable.txt"], "settings": "User" },
+      "needs": "vigembus", "profile": "\"Dolphin\" on the Steam Workshop",
+      "notes": "Calibration covers 27 USA games. Crosshair removal hides player 1's crosshair only.",
+      "options": [
+        { "id": "base", "label": "Base config", "short": "Base", "version": "1.0",
+          "zip": "emulators/dolphin/dist/dolphin-base-v1.0.zip", "sha256": "2fd2e176fb378114d1a1c6706c9d916c19b41b602cba52df086cb33382c25288" },
+        { "id": "calibration", "label": "Calibration pack", "short": "Calibration", "requires": "base", "version": "1.1",
+          "zip": "emulators/dolphin/dist/dolphin-calibration-v1.1.zip", "sha256": "1b11d4b4855db95231b26354e7aed18fefe12ee88a729939c8f7924663b5ae15" },
+        { "id": "crosshairs", "label": "Crosshair removal (P1)", "short": "Crosshairs", "requires": "base", "version": "1.1",
+          "zip": "emulators/dolphin/dist/dolphin-crosshairs-v1.1.zip", "sha256": "612a5518ab59a1825d56399166c3e2f98d4c9ac046e2c36ddbdd272b8eec72d6" } ] },
+    { "id": "pcsx2", "name": "PCSX2", "processes": ["pcsx2"], "exe": ["pcsx2*.exe"],
+      "locate": ["%DOCUMENTS%/PCSX2"], "marker": ["inis/PCSX2.ini"],
+      "portable": { "flag": ["portable.ini", "portable.txt"], "settings": "" },
+      "needs": "vigembus", "profile": "\"PCSX2\" on the Steam Workshop",
+      "notes": "Both GunCon2s plug into the USB ports. Your normal pad is left alone.",
+      "options": [
+        { "id": "base", "label": "Base config", "short": "Base", "version": "1.0",
+          "zip": "emulators/pcsx2/dist/pcsx2-base-v1.0.zip", "sha256": "1d6125a2c0964ff6c99ae5b0555afe9b8a3a07a49636f511725026e307443d7e" } ] },
+    { "id": "duckstation", "name": "DuckStation", "processes": ["duckstation"], "exe": ["duckstation*.exe"],
+      "locate": ["%LOCALAPPDATA%/DuckStation", "%DOCUMENTS%/DuckStation"], "marker": ["settings.ini"],
+      "portable": { "flag": ["portable.txt"], "settings": "" },
+      "needs": "vigembus", "profile": "\"DuckStation GunCon (2P)\" on the Steam Workshop",
+      "notes": "The GunCons take controller ports 1 and 2 while installed. Uninstall gives your pads back.",
+      "options": [
+        { "id": "base", "label": "Base config", "short": "Base", "version": "1.0",
+          "zip": "emulators/duckstation/dist/duckstation-base-v1.0.zip", "sha256": "d078c85fc4c805106ddbdd2d5e4e064701a1118cb1e904acea5933bb1c95ecd9" } ] },
+    { "id": "mame", "name": "MAME", "processes": ["mame"], "exe": ["mame*.exe"],
+      "locate": [], "marker": ["mame.ini", "mame*.exe"],
+      "needs": "vigembus", "profile": "\"MAME - 2P Arcade\" on the Steam Workshop",
+      "notes": "Select the VRLF profile before starting MAME. Gun remaps in cfg/default.cfg override this setup.",
+      "options": [
+        { "id": "base", "label": "Base config", "short": "Base", "version": "1.0",
+          "zip": "emulators/mame/dist/mame-base-v1.0.zip", "sha256": "f84dc41bf961f0905e1216a70dc9aafe5760b5ce2c7ff6f111832c0729a6f002" } ] }
   ]
 }

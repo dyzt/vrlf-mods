@@ -33,6 +33,25 @@ This repository is the single public home for:
 | `martian-panic` | Martian Panic (2343850) | BepInEx 5 (Mono) |
 | `railbreak` | Railbreak (2587170) | UE4SS (Lua); needs VRLF 0.1.37+ |
 
+## Emulators
+
+`vrlf-mods emulator …` (and the **EMULATORS** section of the menu) installs VRLF's lightgun setup into
+Dolphin, PCSX2, DuckStation or MAME, and uninstall puts every setting it changed back. Choose the
+settings folder first; a portable copy keeps the lightgun setup apart from your main emulator.
+
+| id | Options |
+|---|---|
+| `dolphin` | `base`, then `calibration` and `crosshairs` (player 1) |
+| `pcsx2` | `base` |
+| `duckstation` | `base` |
+| `mame` | `base` |
+
+Commands: `emulator list | status <id> | path <id> [<dir>|--clear] | install <id> [<option>] |
+uninstall <id> [<option>] | update <id> | reapply <id>`. Packages are built from `emulators/` by
+`python emulators/build.py`; the Dolphin calibration and crosshair packages come from
+[the fork](https://github.com/dyzt/Dolphin-Lightguns-Accuracy-Inis) via `emulators/dolphin/import_fork.py`
+and are GPL-3.0.
+
 ## How delivery works
 
 Each mod's built zip is **committed** at `mods/<id>/dist/<id>-v<version>.zip`. The manager
