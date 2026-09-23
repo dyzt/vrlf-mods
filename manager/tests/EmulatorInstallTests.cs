@@ -67,9 +67,10 @@ public class EmulatorInstallTests
         // throws while copying this backup back - the one restore attempt made, and it fails.
         EmuFixture.Write(folder, "blocked", "X");
 
-        EmulatorInstaller.RemoveFiles(folder, new List<InstalledFile>(),
+        var notRestored = EmulatorInstaller.RemoveFiles(folder, new List<InstalledFile>(),
             new List<BackupRef> { new("blocked/a.cfg") }, backupDir, warnings: null, bestEffort: true);
 
+        Assert.Equal(new[] { "blocked/a.cfg" }, notRestored);
         Assert.True(Directory.Exists(backupDir));
         Assert.Equal("OLD", EmuFixture.Read(backupDir, "blocked/a.cfg"));
     }

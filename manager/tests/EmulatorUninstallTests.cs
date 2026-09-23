@@ -173,6 +173,64 @@ public class EmulatorUninstallTests
         Assert.Contains("uninstall stopped part-way", res.Message);
     }
 
+    // Regression: the backup folder used to go before the receipt did. When the receipt delete
+    // then failed, a re-run found the restored original at our path, called it "changed since
+    // install", deleted it, and had no backup left to put back.
+    [Fact]
+    public async Task Uninstall_rerun_after_a_receipt_delete_failure_keeps_the_originals()
+    {
+        var paths = EmuFixture.TempPaths();
+        var folder = EmuFixture.TempFolder();
+        EmuFixture.Write(folder, "emu.ini", Fixture["emu.ini"]);
+        EmuFixture.Write(folder, "ctrlr/vrlf.cfg", "OLD");
+        var zip = EmuFixture.Package(V1, ("ctrlr/vrlf.cfg", "NEW"));
+        var opt = EmuFixture.Option("base", zip);
+        var emu = EmuFixture.Entry(opt);
+        var (inst, receipts, _) = EmuFixture.MakeInstaller(paths, (opt, zip));
+        Assert.True((await inst.Install(emu, opt, folder)).Ok);
+        var receiptPath = paths.EmuReceiptPath("testemu", "base");
+        var backupDir = paths.EmuBackupDir("testemu", "base");
+        var r = receipts.Load("testemu", "base")!;
+
+        OpResult first;
+        using (new FileStream(receiptPath, FileMode.Open, FileAccess.Read, FileShare.None))
+            first = inst.Uninstall(emu, r);
+        Assert.False(first.Ok);
+
+        var again = inst.Uninstall(emu, receipts.Load("testemu", "base")!);
+
+        Assert.True(again.Ok, again.Message);
+        Assert.DoesNotContain("had been changed", again.Message);
+        Assert.Equal("OLD", EmuFixture.Read(folder, "ctrlr/vrlf.cfg"));
+        Assert.Equal(Fixture["emu.ini"], EmuFixture.Read(folder, "emu.ini"));
+        Assert.False(File.Exists(receiptPath));
+        Assert.False(Directory.Exists(backupDir));
+    }
+
+    // A backup that cannot be put back (here a damaged receipt path that lands outside the
+    // settings folder) must not cost the backup folder: it may hold the user's only original.
+    [Fact]
+    public async Task Uninstall_keeps_the_backups_when_one_cannot_be_put_back()
+    {
+        var paths = EmuFixture.TempPaths();
+        var folder = EmuFixture.TempFolder();
+        EmuFixture.Write(folder, "emu.ini", Fixture["emu.ini"]);
+        var zip = EmuFixture.Package(V1);
+        var opt = EmuFixture.Option("base", zip);
+        var emu = EmuFixture.Entry(opt);
+        var (inst, receipts, _) = EmuFixture.MakeInstaller(paths, (opt, zip));
+        Assert.True((await inst.Install(emu, opt, folder)).Ok);
+        var backupDir = paths.EmuBackupDir("testemu", "base");
+        EmuFixture.Write(backupDir, "stray.cfg", "ORIGINAL");
+        // Inside the backup folder (it ends in "base"), outside the settings folder.
+        var damaged = receipts.Load("testemu", "base")! with { Backups = new() { new BackupRef("../base/stray.cfg") } };
+
+        var res = inst.Uninstall(emu, damaged);
+
+        Assert.True(res.Ok, res.Message);
+        Assert.Equal("ORIGINAL", EmuFixture.Read(backupDir, "stray.cfg"));
+    }
+
     [Fact]
     public async Task Uninstall_refuses_while_the_emulator_runs_and_keeps_the_receipt()
     {

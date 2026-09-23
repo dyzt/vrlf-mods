@@ -151,6 +151,43 @@ public class IniEditorTests
         Assert.Equal(S, t.Render());
     }
 
+    // Regression: the restored body's last line had no ending (it was the file's last), so a
+    // section added after it since was glued on: "Type = None[Achievements]", and that header's
+    // keys then belonged to our section.
+    [Fact]
+    public void RevertReplace_keeps_a_section_added_after_a_last_section_without_newline()
+    {
+        var t = T("[A]\r\nx = 1\r\n[USB2]\r\nType = None");
+        var p = IniEditor.Replace(t, "USB2", new[] { "Type = guncon2" });
+        t.Lines.Add(new SettingsLine("[Achievements]", "\r\n"));      // the emulator adds a section
+        t.Lines.Add(new SettingsLine("Enabled = true", "\r\n"));
+
+        IniEditor.RevertReplace(t, "USB2", p);
+
+        var saved = T(t.Render());                                     // what the file on disk reads as
+        Assert.Equal(new[] { "Type = None" }, IniEditor.SectionBody(saved, "USB2"));
+        Assert.Equal("true", IniEditor.Get(saved, "Achievements", "Enabled"));
+        Assert.Contains("Type = None\r\n[Achievements]", t.Render());
+    }
+
+    // Same regression through the header: undoing the ending given to an empty last header
+    // glued the next section on: "[USB1][B]".
+    [Fact]
+    public void RevertReplace_keeps_a_section_added_after_an_empty_last_header()
+    {
+        var t = T("[A]\r\nx = 1\r\n[USB1]");
+        var p = IniEditor.Replace(t, "USB1", new[] { "Type = guncon2" });
+        t.Lines.Add(new SettingsLine("[B]", "\r\n"));
+        t.Lines.Add(new SettingsLine("k = v", "\r\n"));
+
+        IniEditor.RevertReplace(t, "USB1", p);
+
+        var saved = T(t.Render());                                     // what the file on disk reads as
+        Assert.Equal(Array.Empty<string>(), IniEditor.SectionBody(saved, "USB1"));
+        Assert.Equal("v", IniEditor.Get(saved, "B", "k"));
+        Assert.Contains("[USB1]\r\n[B]", t.Render());
+    }
+
     [Fact]
     public void Revert_finds_our_settings_after_the_emulator_rewrote_the_file()
     {

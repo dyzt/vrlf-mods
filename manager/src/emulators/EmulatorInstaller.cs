@@ -195,7 +195,8 @@ public sealed class EmulatorInstaller
         catch (Exception ex)
         {
             RevertEdits(folder, applied, warnings: null, bestEffort: true);
-            RemoveFiles(folder, written, backups, backupDir, warnings: null, bestEffort: true);
+            var notRestored = RemoveFiles(folder, written, backups, backupDir, warnings: null, bestEffort: true);
+            if (notRestored.Count == 0) DeleteBackups(backupDir);
             return new OpResult(false, key, $"install failed, nothing changed: {ex.Message}");
         }
         return new OpResult(true, key, $"installed {emu.Name} {opt.Label} v{opt.Version}");
@@ -232,16 +233,19 @@ public sealed class EmulatorInstaller
         }
 
         var warnings = new List<string>();
+        List<string> notRestored;
         try
         {
             RevertEdits(r.Folder, r.Edits, warnings, bestEffort: false);
-            RemoveFiles(r.Folder, r.Files, r.Backups, backupDir, warnings, bestEffort: false);
+            notRestored = RemoveFiles(r.Folder, r.Files, r.Backups, backupDir, warnings, bestEffort: false);
             _receipts.Delete(r.EmulatorId, r.OptionId);
         }
         catch (Exception ex)
         {
             return new OpResult(false, key, $"uninstall stopped part-way ({ex.Message}); fix that and run it again");
         }
+        // Only now: while the receipt exists a re-run may still need these originals.
+        if (notRestored.Count == 0) DeleteBackups(backupDir);
 
         var msg = $"uninstalled {emu.Name} {label}";
         var distinct = warnings.Distinct().ToList();
@@ -340,45 +344,66 @@ public sealed class EmulatorInstaller
         catch (InvalidDataException) { return null; }
     }
 
-    /// <summary>Deletes the files we installed and puts back the ones they replaced. The backup
-    /// folder - the only copy of a displaced original - is removed only once every restore it
-    /// attempted actually succeeded; otherwise it is left for the user to recover by hand.
+    /// <summary>Deletes the files we installed and puts back the ones they replaced. Returns the
+    /// relative paths it could not put back; empty means every restore it attempted went
+    /// through. It never removes the backup folder, the only copy of a displaced original: the
+    /// caller does that once nothing can still need it (for an uninstall, once the receipt is
+    /// gone, so a re-run always still has its backups).
     /// Internal (rather than private) so a test can drive the restore-failure branch directly:
     /// reaching it through a full <see cref="Install"/> rollback would need a lock injected
     /// between a successful extraction and the later failure that triggers rollback, which a
     /// synchronous test has no way to do.</summary>
-    internal static void RemoveFiles(string folder, List<InstalledFile> files, List<BackupRef> backups, string backupDir,
-                            List<string>? warnings, bool bestEffort)
+    internal static List<string> RemoveFiles(string folder, List<InstalledFile> files, List<BackupRef> backups,
+                            string backupDir, List<string>? warnings, bool bestEffort)
     {
         foreach (var f in files)
         {
             var p = SafeResolve(folder, f.RelPath);
-            if (p is null || !File.Exists(p)) continue;
-            if (warnings is not null
-                && !string.Equals(Installer.Sha256HexFile(p), f.Sha256, StringComparison.OrdinalIgnoreCase))
-                warnings.Add($"{f.RelPath} had been changed since install and was removed");
-            Try(bestEffort, () => File.Delete(p));
+            if (p is null) continue;
+            Try(bestEffort, () =>
+            {
+                if (!File.Exists(p)) return;
+                var sha = Installer.Sha256HexFile(p);
+                // Already the user's original: an earlier run put it back, then stopped before
+                // the receipt went. Deleting it now would lose it.
+                if (IsBackedUpOriginal(backupDir, backups, f.RelPath, sha)) return;
+                if (warnings is not null && !string.Equals(sha, f.Sha256, StringComparison.OrdinalIgnoreCase))
+                    warnings.Add($"{f.RelPath} had been changed since install and was removed");
+                File.Delete(p);
+            });
         }
 
-        bool restoredEverything = true;
+        var notRestored = new List<string>();
         foreach (var b in backups)
         {
             var src = SafeResolve(backupDir, b.RelPath);
             var dst = SafeResolve(folder, b.RelPath);
-            if (src is null || dst is null) { restoredEverything = false; continue; }
+            if (src is null || dst is null) { notRestored.Add(b.RelPath); continue; }
             if (!File.Exists(src)) continue;
             if (!TryRestore(bestEffort, () =>
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(dst)!);
                 File.Copy(src, dst, overwrite: true);
-            })) restoredEverything = false;
+            })) notRestored.Add(b.RelPath);
         }
 
         foreach (var f in files)
             if (SafeResolve(folder, f.RelPath) is { } p) PruneEmptyParents(folder, p);
-        if (restoredEverything)
-            Try(true, () => { if (Directory.Exists(backupDir)) Directory.Delete(backupDir, recursive: true); });
+        return notRestored;
     }
+
+    /// <summary>True when the file at an installed path is byte-for-byte the backup of what it
+    /// replaced, i.e. it is the user's original again.</summary>
+    static bool IsBackedUpOriginal(string backupDir, List<BackupRef> backups, string rel, string sha)
+    {
+        if (!backups.Any(b => string.Equals(b.RelPath, rel, StringComparison.OrdinalIgnoreCase))) return false;
+        var bk = SafeResolve(backupDir, rel);
+        return bk is not null && File.Exists(bk)
+            && string.Equals(Installer.Sha256HexFile(bk), sha, StringComparison.OrdinalIgnoreCase);
+    }
+
+    static void DeleteBackups(string backupDir) =>
+        Try(true, () => { if (Directory.Exists(backupDir)) Directory.Delete(backupDir, recursive: true); });
 
     /// <summary>Like <see cref="Try"/> but reports whether the action actually succeeded, so a
     /// caller can gate a later step on every attempt having gone through.</summary>

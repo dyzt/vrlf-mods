@@ -152,7 +152,13 @@ public static class IniEditor
         int end = BodyEnd(t, h);
         t.Lines.RemoveRange(h + 1, end - h - 1);
         t.Lines.InsertRange(h + 1, prior.Section);
-        if (prior.FinalEolAdded) t.Lines[h] = t.Lines[h] with { Eol = "" };
+
+        // The body comes back verbatim, so a section that was the file's last brings back a last
+        // line with no ending. Anything added after it since would be glued onto that line.
+        int last = h + prior.Section.Count;
+        bool isFileEnd = last == t.Lines.Count - 1;
+        if (!isFileEnd && t.Lines[last].Eol.Length == 0) t.Lines[last] = t.Lines[last] with { Eol = t.Eol };
+        if (prior.FinalEolAdded && h == t.Lines.Count - 1) t.Lines[h] = t.Lines[h] with { Eol = "" };
     }
 
     /// <summary>Inserts a line after the section's last non-blank line. Returns true when that
