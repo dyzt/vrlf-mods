@@ -394,4 +394,37 @@ public class EmulatorServiceTests
         Assert.NotNull(mm.Emulators);
         Assert.NotNull((await mm.List()).Emulators);
     }
+
+    // Flycast's two guns are Virtual Lightgun lanes, so its status reports that driver, not ViGEmBus.
+    [Theory]
+    [InlineData("1.0.3", true)]
+    [InlineData(null, false)]
+    public void A_virtualgun_emulator_reports_the_Virtual_Lightgun(string? version, bool met)
+    {
+        var paths = EmuFixture.TempPaths();
+        var http = new FakeHttpFetcher(new());
+        var gun = new VirtualGun(new FakeVirtualGunState { Version = version }, http, new FakeElevatedRunner(0), paths);
+        var receipts = new EmulatorReceiptStore(paths);
+        var svc = new EmulatorService(new RegistryLoader(http, paths),
+            new EmulatorFolders(new GamePathStore(paths), new FakeKnownFolders(new())),
+            new EmulatorInstaller(http, paths, receipts, new FakeProcessProbe()), receipts,
+            new Vigem(new FakeServiceDetector(true), http, new FakeLauncher(), paths), gun);
+
+        var s = svc.StatusFor(EmuFixture.Entry() with { Needs = "virtualgun" });
+
+        Assert.Equal(met, s.NeedsMet);
+    }
+
+    [Fact]
+    public void Status_text_names_the_Virtual_Lightgun()
+    {
+        var s = new EmulatorStatus("flycast", "Flycast", null, false, false, null, false, new(),
+            "virtualgun", false, null, null);
+        var old = Console.Out;
+        var sw = new StringWriter();
+        Console.SetOut(sw);
+        try { Output.EmulatorStatusText(s); }
+        finally { Console.SetOut(old); }
+        Assert.Contains("Needs Virtual Lightgun: not installed", sw.ToString());
+    }
 }

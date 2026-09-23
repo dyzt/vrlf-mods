@@ -49,7 +49,8 @@ public static class Output
             var needs = o.Requires is null ? "" : $"  (needs {o.Requires})";
             Console.WriteLine($"  [{(o.InstalledVersion is null ? " " : "x")}] {o.Id,-12} {o.Label}  {state}{needs}");
         }
-        if (e.Needs == "vigembus") Console.WriteLine($"  Needs ViGEmBus: {(e.NeedsMet ? "installed" : "not installed")}");
+        var driver = e.Needs switch { "vigembus" => "ViGEmBus", "virtualgun" => "Virtual Lightgun", _ => null };
+        if (driver is not null) Console.WriteLine($"  Needs {driver}: {(e.NeedsMet ? "installed" : "not installed")}");
         if (e.Profile is not null) Console.WriteLine($"  VRLF profile: {e.Profile}");
         if (e.Notes is not null) Console.WriteLine($"  {e.Notes}");
     }

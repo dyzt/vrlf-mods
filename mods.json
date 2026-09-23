@@ -161,6 +161,13 @@
       "notes": "Select the VRLF profile before starting MAME. Gun remaps in cfg/default.cfg override this setup. Keep mame.ini next to mame.exe, not in ini/.",
       "options": [
         { "id": "base", "label": "Base config", "short": "Base", "version": "1.0",
-          "zip": "emulators/mame/dist/mame-base-v1.0.zip", "sha256": "f84dc41bf961f0905e1216a70dc9aafe5760b5ce2c7ff6f111832c0729a6f002" } ] }
+          "zip": "emulators/mame/dist/mame-base-v1.0.zip", "sha256": "f84dc41bf961f0905e1216a70dc9aafe5760b5ce2c7ff6f111832c0729a6f002" } ] },
+    { "id": "flycast", "name": "Flycast", "processes": ["flycast"], "exe": ["flycast*.exe"],
+      "locate": [], "marker": ["emu.cfg", "flycast*.exe"],
+      "needs": "virtualgun", "profile": "\"Flycast Light Gun (2P)\" on the Steam Workshop",
+      "notes": "Select the VRLF profile before starting Flycast. With Raw Input on, Flycast only hears a real keyboard. The gun mappings match English Windows; elsewhere, map the guns in Flycast's Controls.",
+      "options": [
+        { "id": "base", "label": "Base config", "short": "Base", "version": "1.0",
+          "zip": "emulators/flycast/dist/flycast-base-v1.0.zip", "sha256": "3163a1be958decd20e34732733984ae2fe6cdf4898c375e3c30a470d33f2efab" } ] }
   ]
 }

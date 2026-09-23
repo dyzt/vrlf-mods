@@ -11,18 +11,19 @@ internal static class Program
         var http = new HttpFetcher();
         var loader = new RegistryLoader(http, paths);
         var vigem = new Vigem(new RegistryServiceDetector(), http, new ProcessLauncher(), paths);
+        var virtualGun = new VirtualGun(new RegistryVirtualGunState(), http, new ElevatedRunner(), paths);
         var emuReceipts = new EmulatorReceiptStore(paths);
         var emulators = new EmulatorService(loader,
             new EmulatorFolders(new GamePathStore(paths), new SystemKnownFolders()),
             new EmulatorInstaller(http, paths, emuReceipts, new SystemProcessProbe()),
-            emuReceipts, vigem);
+            emuReceipts, vigem, virtualGun);
         var mm = new ModManager(
             loader,
             new GameLocator(new SteamLocator(new RegistrySteamPaths()), new GamePathStore(paths)),
             new Installer(http, paths, new ReceiptStore(paths)),
             new ReceiptStore(paths),
             vigem,
-            virtualGun: new VirtualGun(new RegistryVirtualGunState(), http, new ElevatedRunner(), paths),
+            virtualGun: virtualGun,
             emulators: emulators);
 
         return await Run(p, mm);

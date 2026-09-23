@@ -1,0 +1,10 @@
+{
+  "version": "1.0",
+  "edits": [
+    {"file": "emu.cfg", "format": "ini", "section": "input", "key": "RawInput", "value": "yes"},
+    {"file": "emu.cfg", "format": "ini", "section": "input", "key": "device1", "value": "7"},
+    {"file": "emu.cfg", "format": "ini", "section": "input", "key": "device2", "value": "7"},
+    {"file": "emu.cfg", "format": "ini", "section": "input", "key": "maple_raw_mouse_HID_DEVICE_SYSTEM_VHF#2&56524c30&0&0000#{378de44c-56ef-11d1-bc8c-00a0c91405dd}", "value": "0"},
+    {"file": "emu.cfg", "format": "ini", "section": "input", "key": "maple_raw_mouse_HID_DEVICE_SYSTEM_VHF#2&56524c31&0&0000#{378de44c-56ef-11d1-bc8c-00a0c91405dd}", "value": "1"}
+  ]
+}

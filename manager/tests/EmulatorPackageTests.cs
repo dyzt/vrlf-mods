@@ -47,13 +47,19 @@ public class EmulatorPackageTests
             ["mame.exe"] = "MZ",
             ["ctrlr/vrlf.cfg"] = "<old/>",
         },
+        ["flycast"] = new()
+        {
+            ["emu.cfg"] = "[config]\nDynarec.Enabled = yes\n\n[input]\nMouseSensitivity = 100\nRawInput = no\ndevice1 = 0\ndevice1.1 = 1\ndevice2 = 10\nmaple_sdl_mouse = 0\n\n[log]\nLogToFile = no\n",
+            ["flycast.exe"] = "MZ",
+            ["mappings/SDL_Default Mouse.cfg"] = "[digital]\nbind0 = 1:btn_b\n",
+        },
     };
 
     [Fact]
     public void Every_emulator_zip_is_committed_and_matches_its_sha256()
     {
         var reg = Registry();
-        Assert.Equal(new[] { "dolphin", "pcsx2", "duckstation", "mame" }, reg.EmulatorList.Select(e => e.Id));
+        Assert.Equal(new[] { "dolphin", "pcsx2", "duckstation", "mame", "flycast" }, reg.EmulatorList.Select(e => e.Id));
         foreach (var o in reg.EmulatorList.SelectMany(e => e.Options))
             Assert.Equal(o.Sha256, Installer.Sha256Hex(Zip(o)));
     }
@@ -63,7 +69,7 @@ public class EmulatorPackageTests
     {
         using var s = typeof(ModRegistry).Assembly.GetManifestResourceStream("mods.json")!;
         var embedded = JsonSerializer.Deserialize(s, VrlfJson.Default.ModRegistry)!;
-        Assert.Equal(4, embedded.EmulatorList.Count);
+        Assert.Equal(5, embedded.EmulatorList.Count);
     }
 
     // Dolphin uses Documents\Dolphin Emulator whenever that folder exists, so with both present
@@ -92,6 +98,7 @@ public class EmulatorPackageTests
     [InlineData("pcsx2")]
     [InlineData("duckstation")]
     [InlineData("mame")]
+    [InlineData("flycast")]
     public async Task Installs_every_option_then_uninstalls_to_the_original_bytes(string id)
     {
         var emu = Registry().FindEmulator(id)!;
@@ -121,6 +128,11 @@ public class EmulatorPackageTests
     }
 
     static SettingsText S(string folder, string rel) => SettingsText.Load(EmuFixture.PathOf(folder, rel));
+
+    // vrlf-virtual-gun pins lane N to VHF instance 2&56524c3N on every PC, and Flycast keys its
+    // port assignment on "raw_mouse_" + that device id.
+    static string FlycastLane(int lane) =>
+        $"maple_raw_mouse_HID_DEVICE_SYSTEM_VHF#2&56524c3{lane}&0&0000#{{378de44c-56ef-11d1-bc8c-00a0c91405dd}}";
 
     static void AssertInstalled(string id, string folder)
     {
@@ -163,6 +175,20 @@ public class EmulatorPackageTests
                 Assert.Equal("0", MameIniEditor.Get(m, "joystick_deadzone"));
                 Assert.Equal("dinput", MameIniEditor.Get(m, "keyboardprovider"));
                 Assert.StartsWith("<?xml", EmuFixture.Read(folder, "ctrlr/vrlf.cfg"));
+                break;
+            case "flycast":
+                var f = S(folder, "emu.cfg");
+                Assert.Equal("yes", IniEditor.Get(f, "input", "RawInput"));
+                Assert.Equal("7", IniEditor.Get(f, "input", "device1"));
+                Assert.Equal("7", IniEditor.Get(f, "input", "device2"));
+                Assert.Equal("1", IniEditor.Get(f, "input", "device1.1"));
+                Assert.Equal("0", IniEditor.Get(f, "input", FlycastLane(0)));
+                Assert.Equal("1", IniEditor.Get(f, "input", FlycastLane(1)));
+                Assert.Contains("RawInput = yes\n", EmuFixture.Read(folder, "emu.cfg"));   // Flycast's own spacing
+                foreach (var name in new[] { "RAW_HID-compliant mouse [HID_DEVICE_SYSTEM_VHF].cfg",
+                                             "RAW_HID-compliant mouse [HID_DEVICE_SYSTEM_VHF]_arcade.cfg" })
+                    Assert.Contains("1:reload", EmuFixture.Read(folder, "mappings/" + name));
+                Assert.Equal("[digital]\nbind0 = 1:btn_b\n", EmuFixture.Read(folder, "mappings/SDL_Default Mouse.cfg"));
                 break;
         }
     }

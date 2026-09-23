@@ -22,10 +22,14 @@ public sealed class EmulatorService
     private readonly EmulatorInstaller _installer;
     private readonly EmulatorReceiptStore _receipts;
     private readonly Vigem _vigem;
+    private readonly VirtualGun? _virtualGun;
 
     public EmulatorService(RegistryLoader loader, EmulatorFolders folders, EmulatorInstaller installer,
-                           EmulatorReceiptStore receipts, Vigem vigem)
-    { _loader = loader; _folders = folders; _installer = installer; _receipts = receipts; _vigem = vigem; }
+                           EmulatorReceiptStore receipts, Vigem vigem, VirtualGun? virtualGun = null)
+    {
+        _loader = loader; _folders = folders; _installer = installer; _receipts = receipts;
+        _vigem = vigem; _virtualGun = virtualGun;
+    }
 
     public List<EmulatorStatus> StatusesFor(ModRegistry reg) => reg.EmulatorList.Select(StatusFor).ToList();
 
@@ -40,7 +44,13 @@ public sealed class EmulatorService
         var folder = FolderFor(e);
         var options = e.Options.Select(o => new EmulatorOptionStatus(o.Id, o.Label, o.Short ?? o.Label, o.Version,
             receipts.FirstOrDefault(r => r.OptionId == o.Id)?.Version, o.Requires)).ToList();
-        bool needsMet = e.Needs switch { null => true, "vigembus" => _vigem.IsInstalled(), _ => false };
+        bool needsMet = e.Needs switch
+        {
+            null => true,
+            "vigembus" => _vigem.IsInstalled(),
+            "virtualgun" => _virtualGun?.IsInstalled() ?? false,
+            _ => false,
+        };
         return new EmulatorStatus(e.Id, e.Name, folder, folder is not null,
             folder is not null && Directory.Exists(folder),
             folder is null ? _folders.Suggest(e) : null, receipts.Count > 0,
