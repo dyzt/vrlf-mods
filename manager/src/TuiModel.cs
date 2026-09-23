@@ -1,10 +1,11 @@
 namespace VrlfMods;
 
-public enum Screen { List, Mod, VirtualGun }
+public enum Screen { List, Mod, VirtualGun, Emulator }
 public enum RowKind { Header, Action, Toggle, Separator, Info }
 public enum TuiKey { Up, Down, Enter, Back, Quit, Refresh, Other }
 public enum ActionKind { None, Open, Back, Quit, Install, Reinstall, Uninstall, Update, Vigem, VirtualGun, Refresh,
-                         Toggle, SetPath, ClearPath, GunInstall, GunUninstall }
+                         Toggle, SetPath, ClearPath, GunInstall, GunUninstall,
+                         EmuOpen, EmuToggle, EmuSetFolder, EmuUseSuggested, EmuClearFolder, EmuUpdate, EmuReapply }
 
 public record MenuRow(RowKind Kind, string Text, ActionKind Action = ActionKind.None,
     string? ModId = null, string? ToggleKey = null, bool? ToggleOn = null, long? Appid = null,
@@ -40,8 +41,10 @@ public static class TuiModel
     {
         // Pad every name to the widest one (mods + the ViGEmBus row) so all the
         // installed/not-installed labels line up in a single column.
-        int width = Math.Max(Math.Max("ViGEmBus".Length, "Virtual Lightgun".Length),
-            r.Mods.Count == 0 ? 0 : r.Mods.Max(m => DisplayName(m.Name).Length));
+        int width = new[] { "ViGEmBus".Length, "Virtual Lightgun".Length }
+            .Concat(r.Mods.Select(m => DisplayName(m.Name).Length))
+            .Concat((r.Emulators ?? new()).Select(e => e.Name.Length))
+            .Max();
 
         var rows = new List<MenuRow>();
 
@@ -66,6 +69,19 @@ public static class TuiModel
             rows.Add(new MenuRow(RowKind.Action, $"{DisplayName(m.Name).PadRight(width)}   {RowStatus(m)}",
                 ActionKind.Open, ModId: m.Id));
 
+        if (r.Emulators is { Count: > 0 } emus)
+        {
+            rows.Add(new MenuRow(RowKind.Separator, "", Selectable: false));
+            rows.Add(new MenuRow(RowKind.Header, "EMULATORS", Selectable: false));
+            foreach (var e in emus)
+            {
+                var (glyph, text) = EmulatorState(e);
+                rows.Add(new MenuRow(RowKind.Action, $"{e.Name.PadRight(width)}   {glyph} {text}",
+                    ActionKind.EmuOpen, ModId: e.Id,
+                    Help: "Installs VRLF's lightgun setup into this emulator. Uninstall puts your settings back."));
+            }
+        }
+
         return rows;
     }
 
@@ -80,6 +96,64 @@ public static class TuiModel
                 : string.Join(" + ", installed.Select(o => o.Short)));
         if (!e.FolderChosen) return ("○", "folder not chosen");
         return ("○", "not installed");
+    }
+
+    public static string EmulatorFolderText(EmulatorStatus e)
+    {
+        if (e.Folder is null) return "Settings folder: not chosen. Enter to choose it";
+        if (e.Locked) return $"Settings folder: {e.Folder}  (installed here, uninstall to move)";
+        if (!e.FolderExists) return $"Settings folder: {e.Folder}  (no longer there, Enter to fix)";
+        return $"Settings folder: {e.Folder}  (you chose this)";
+    }
+
+    /// <summary>The emulator screen: folder first, then one row per option, then the extras.</summary>
+    public static List<MenuRow> EmulatorRows(EmulatorStatus e)
+    {
+        var rows = new List<MenuRow>
+        {
+            new(RowKind.Action, EmulatorFolderText(e), ActionKind.EmuSetFolder, ModId: e.Id,
+                Help: e.Locked
+                    ? "Uninstall everything here to move it."
+                    : "Type or paste the settings folder or the program folder. A portable copy keeps your lightgun setup separate."),
+        };
+        if (e.Folder is null && e.Suggested is not null)
+            rows.Add(new(RowKind.Action, $"Use your main install: {e.Suggested}", ActionKind.EmuUseSuggested, ModId: e.Id,
+                Help: $"Installs into the {e.Name} you use for everything else. Uninstall puts your settings back."));
+        rows.Add(new(RowKind.Separator, "", Selectable: false));
+
+        foreach (var o in e.Options)
+        {
+            bool installed = o.InstalledVersion is not null;
+            var required = o.Requires is null ? null : e.Options.FirstOrDefault(x => x.Id == o.Requires);
+            bool reqMet = o.Requires is null || required?.InstalledVersion is not null;
+            bool enabled = installed || (e.FolderChosen && e.FolderExists && reqMet);
+            string help = installed ? "Enter to uninstall. Your settings from before go back."
+                : !e.FolderChosen ? "Choose the settings folder first."
+                : !e.FolderExists ? "The settings folder is no longer there."
+                : !reqMet ? $"Install {required?.Label ?? o.Requires} first."
+                : "Enter to install.";
+            rows.Add(new(RowKind.Toggle, $"{o.Label,-28} v{o.InstalledVersion ?? o.Version}", ActionKind.EmuToggle,
+                ModId: e.Id, ToggleKey: o.Id, ToggleOn: installed, Enabled: enabled, Help: help));
+        }
+
+        var pending = e.Options.Where(o => o.InstalledVersion is not null && o.InstalledVersion != o.Version).ToList();
+        if (pending.Count > 0)
+            rows.Add(new(RowKind.Action, "Update → " + string.Join(", ", pending.Select(o => $"{o.Label} v{o.Version}")),
+                ActionKind.EmuUpdate, ModId: e.Id));
+        if (e.Options.Any(o => o.InstalledVersion is not null))
+            rows.Add(new(RowKind.Action, "Re-apply installed options", ActionKind.EmuReapply, ModId: e.Id,
+                Help: $"Puts our settings back if they were changed in {e.Name}'s own menus."));
+        if (e.Folder is not null && !e.Locked)
+            rows.Add(new(RowKind.Action, "Forget this folder", ActionKind.EmuClearFolder, ModId: e.Id));
+
+        rows.Add(new(RowKind.Separator, "", Selectable: false));
+        if (e.Needs == "vigembus")
+            rows.Add(new(RowKind.Info, e.NeedsMet
+                ? "Needs ViGEmBus: installed."
+                : "Needs ViGEmBus: not installed. Install it from the main list.", Selectable: false));
+        if (e.Profile is not null) rows.Add(new(RowKind.Info, $"VRLF profile: {e.Profile}", Selectable: false));
+        if (e.Notes is not null) rows.Add(new(RowKind.Info, e.Notes, Selectable: false));
+        return rows;
     }
 
     public static string VirtualGunStatus(ListReport r)
@@ -205,6 +279,10 @@ public static class TuiModel
                     return (new TuiState(Screen.VirtualGun, 0, null), new TuiAction(ActionKind.VirtualGun));
                 if (row.Action == ActionKind.Toggle)
                     return (s, new TuiAction(ActionKind.Toggle, row.ModId, row.ToggleKey, !(row.ToggleOn ?? false)));
+                if (row.Action == ActionKind.EmuOpen)
+                    return (new TuiState(Screen.Emulator, 0, row.ModId), new TuiAction(ActionKind.EmuOpen, row.ModId));
+                if (row.Action == ActionKind.EmuToggle)
+                    return (s, new TuiAction(ActionKind.EmuToggle, row.ModId, row.ToggleKey, !(row.ToggleOn ?? false)));
                 return (s, new TuiAction(row.Action, row.ModId, Appid: row.Appid));
             default: return (s, new TuiAction(ActionKind.None));
         }

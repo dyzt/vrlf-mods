@@ -16,13 +16,16 @@ public static class Tui
         while (true)
         {
             var status = state.ModId is null ? null : list.Mods.FirstOrDefault(m => m.Id == state.ModId);
+            var emu = state.Screen == Screen.Emulator
+                ? list.Emulators?.FirstOrDefault(e => e.Id == state.ModId) : null;
             var rows = state.Screen switch
             {
                 Screen.VirtualGun => TuiModel.VirtualGunRows(list),
                 Screen.Mod when status is not null => TuiModel.ModRows(status, cfg),
+                Screen.Emulator when emu is not null => TuiModel.EmulatorRows(emu),
                 _ => TuiModel.ListRows(list),
             };
-            Render(state, rows, status, list, message);
+            Render(state, rows, status, emu, list, message);
             message = null;
 
             var key = MapKey(Console.ReadKey(intercept: true));
@@ -97,6 +100,37 @@ public static class Tui
                     message = res.Message;
                     cfg = await LoadConfig(mm, list, action.ModId!);
                     break;
+                case ActionKind.EmuOpen:
+                    list = await mm.List();
+                    break;
+                case ActionKind.EmuToggle:
+                    message = await Working(() => action.ToggleOn
+                        ? mm.Emulators.Install(action.ModId!, action.ToggleKey)
+                        : mm.Emulators.Uninstall(action.ModId!, action.ToggleKey));
+                    list = await mm.List();
+                    break;
+                case ActionKind.EmuSetFolder:
+                    message = await PromptForEmulatorFolder(mm, list, action.ModId!);
+                    list = await mm.List();
+                    break;
+                case ActionKind.EmuUseSuggested:
+                    message = await Working(() => mm.Emulators.UseSuggested(action.ModId!));
+                    list = await mm.List();
+                    state = state with { Cursor = 0 };
+                    break;
+                case ActionKind.EmuClearFolder:
+                    message = await Working(() => mm.Emulators.ClearFolder(action.ModId!));
+                    list = await mm.List();
+                    state = state with { Cursor = 0 };
+                    break;
+                case ActionKind.EmuUpdate:
+                    message = await Working(() => mm.Emulators.Update(action.ModId!));
+                    list = await mm.List();
+                    break;
+                case ActionKind.EmuReapply:
+                    message = await Working(() => mm.Emulators.Reapply(action.ModId!));
+                    list = await mm.List();
+                    break;
             }
             }
             catch (Exception ex) { message = "error: " + ex.Message; }   // an action must never crash the loop
@@ -114,6 +148,19 @@ public static class Tui
         if (string.IsNullOrWhiteSpace(typed)) return "cancelled";
 
         var r = await mm.SetGamePath(modId, appid, typed);
+        return string.Join("; ", r.Results.Select(x => x.Message));
+    }
+
+    static async Task<string> PromptForEmulatorFolder(ModManager mm, ListReport list, string emuId)
+    {
+        var st = list.Emulators?.FirstOrDefault(e => e.Id == emuId);
+        if (st is { Locked: true }) return $"Installed in {st.Folder}. Uninstall to move.";
+        Console.WriteLine("\n  Type or paste the settings folder or the program folder, then Enter. Blank cancels.");
+        Console.WriteLine("  (In Explorer: Shift+Right-click the folder, \"Copy as path\".)");
+        Console.Write("\n  > ");
+        var typed = Console.ReadLine();
+        if (string.IsNullOrWhiteSpace(typed)) return "cancelled";
+        var r = await mm.Emulators.SetFolder(emuId, typed);
         return string.Join("; ", r.Results.Select(x => x.Message));
     }
 
@@ -152,13 +199,14 @@ public static class Tui
         }
     };
 
-    static void Render(TuiState s, List<MenuRow> rows, ModStatus? mod, ListReport list, string? message)
+    static void Render(TuiState s, List<MenuRow> rows, ModStatus? mod, EmulatorStatus? emu, ListReport list, string? message)
     {
         Console.Clear();
         Console.WriteLine(s.Screen switch
         {
             Screen.VirtualGun => $"  Virtual Lightgun  —  {TuiModel.VirtualGunStatus(list)}\n",
             Screen.Mod when mod is not null => $"  {TuiModel.DisplayName(mod.Name)}  —  {TuiModel.RowStatus(mod)}\n",
+            Screen.Emulator when emu is not null => $"  {emu.Name}   {TuiModel.EmulatorState(emu).Glyph} {TuiModel.EmulatorState(emu).Text}\n",
             _ => "  VRLF Mod Manager\n",
         });
 
