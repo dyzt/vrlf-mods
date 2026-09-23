@@ -28,9 +28,10 @@ public class EmulatorUninstallTests
     };
 
     static async Task<(EmulatorInstaller inst, EmulatorReceiptStore receipts, FakeProcessProbe probe,
-        EmulatorEntry emu, EmulatorOption opt, string folder)> Installed(string settings = Settings, string version = "1.0")
+        EmulatorEntry emu, EmulatorOption opt, string folder)> Installed(string settings = Settings, string version = "1.0",
+                                                                         AppPaths? paths = null)
     {
-        var paths = EmuFixture.TempPaths();
+        paths ??= EmuFixture.TempPaths();
         var folder = EmuFixture.TempFolder();
         foreach (var (rel, content) in Fixture) EmuFixture.Write(folder, rel, content);
         var zip = EmuFixture.Package(settings, ("ctrlr/vrlf.cfg", "NEW"), ("inputprofiles/p.ini", "P"));
@@ -113,17 +114,36 @@ public class EmulatorUninstallTests
         Assert.Null(receipts.Load("testemu", "base"));
     }
 
+    // The folder may only have been moved: the backups of what the install replaced (here
+    // ctrlr/vrlf.cfg) are the user's only copies, so they stay and the message says where.
     [Fact]
     public async Task Uninstall_when_the_folder_is_gone_recreates_nothing()
     {
-        var (inst, receipts, _, emu, _, folder) = await Installed();
+        var paths = EmuFixture.TempPaths();
+        var (inst, receipts, _, emu, _, folder) = await Installed(paths: paths);
+        var backupDir = paths.EmuBackupDir("testemu", "base");
         Directory.Delete(folder, recursive: true);
 
         var res = inst.Uninstall(emu, receipts.Load("testemu", "base")!);
 
         Assert.True(res.Ok, res.Message);
         Assert.Contains("no longer exists", res.Message);
+        Assert.EndsWith($"so there was nothing to put back; the files it had replaced are kept in {backupDir}", res.Message);
+        Assert.Equal("OLD", EmuFixture.Read(backupDir, "ctrlr/vrlf.cfg"));
         Assert.False(Directory.Exists(folder));
+        Assert.Null(receipts.Load("testemu", "base"));
+    }
+
+    [Fact]
+    public async Task Uninstall_when_the_folder_is_gone_without_backups_names_none()
+    {
+        var (inst, receipts, emu, _, _, folder) = await V1Installed();
+        Directory.Delete(folder, recursive: true);
+
+        var res = inst.Uninstall(emu, receipts.Load("testemu", "base")!);
+
+        Assert.True(res.Ok, res.Message);
+        Assert.EndsWith("so there was nothing to put back", res.Message);
         Assert.Null(receipts.Load("testemu", "base"));
     }
 

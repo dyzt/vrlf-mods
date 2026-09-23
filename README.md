@@ -52,6 +52,8 @@ uninstall <id> [<option>] | update <id> | reapply <id>`. Packages are built from
 [the fork](https://github.com/dyzt/Dolphin-Lightguns-Accuracy-Inis) via `emulators/dolphin/import_fork.py`
 and are GPL-3.0.
 
+Never remove or rename an emulator or option id in mods.json once released: installed receipts refer to them.
+
 ## How delivery works
 
 Each mod's built zip is **committed** at `mods/<id>/dist/<id>-v<version>.zip`. The manager

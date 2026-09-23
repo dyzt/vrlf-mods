@@ -138,8 +138,18 @@ public sealed class EmulatorInstaller
     {
         var key = Key(emu.Id, opt.Id);
         if (RunningProcess(emu) is { } running) return new OpResult(false, key, CloseFirst(emu, running));
-        if (_receipts.Load(emu.Id, opt.Id) is not null)
-            return new OpResult(false, key, $"{opt.Label} is already installed");
+        // A receipt that no longer parses still means installed: going ahead would record our
+        // own settings as the user's originals.
+        if (_receipts.Exists(emu.Id, opt.Id))
+            return new OpResult(false, key, _receipts.Load(emu.Id, opt.Id) is null
+                ? $"{opt.Label} has a damaged receipt at {_paths.EmuReceiptPath(emu.Id, opt.Id)}. Repair or delete it before installing."
+                : $"{opt.Label} is already installed");
+        // Backups with no receipt are originals a failed install could not put back; a new
+        // install would back up over them.
+        var backupDir = _paths.EmuBackupDir(emu.Id, opt.Id);
+        if (HasEntries(backupDir))
+            return new OpResult(false, key,
+                $"A previous install left backups in {backupDir}. Put those files back or delete that folder, then install again.");
         if (!Directory.Exists(folder)) return new OpResult(false, key, $"settings folder not found: {folder}");
 
         byte[] bytes;
@@ -194,12 +204,24 @@ public sealed class EmulatorInstaller
         }
         catch (Exception ex)
         {
-            RevertEdits(folder, applied, warnings: null, bestEffort: true);
-            var notRestored = RemoveFiles(folder, written, backups, backupDir, warnings: null, bestEffort: true);
-            if (notRestored.Count == 0) DeleteBackups(backupDir);
-            return new OpResult(false, key, $"install failed, nothing changed: {ex.Message}");
+            return new OpResult(false, key, RollBack(folder, applied, written, backups, backupDir, ex.Message));
         }
         return new OpResult(true, key, $"installed {emu.Name} {opt.Label} v{opt.Version}");
+    }
+
+    /// <summary>Undoes a failed install and says how that went. The backups go only when every
+    /// original was put back; otherwise they are the user's only copies, and the message says
+    /// where. Internal so a test can reach the restore-failure branch (see <see
+    /// cref="RemoveFiles"/>).</summary>
+    internal static string RollBack(string folder, List<AppliedEdit> applied, List<InstalledFile> written,
+                                    List<BackupRef> backups, string backupDir, string error)
+    {
+        RevertEdits(folder, applied, warnings: null, bestEffort: true);
+        var notRestored = RemoveFiles(folder, written, backups, backupDir, warnings: null, bestEffort: true);
+        if (notRestored.Count > 0)
+            return $"install failed ({error}); could not put back {string.Join(", ", notRestored)}. The originals are kept in {backupDir}.";
+        DeleteBackups(backupDir);
+        return $"install failed, nothing changed: {error}";
     }
 
     public OpResult Uninstall(EmulatorEntry emu, EmulatorReceipt r)
@@ -216,20 +238,18 @@ public sealed class EmulatorInstaller
             return new OpResult(false, key,
                 $"the drive for {r.Folder} is not connected. Reconnect it and run uninstall again.");
 
-        // A folder deleted or moved since: restoring backups would recreate it, so put nothing back.
+        // A folder deleted or moved since: restoring backups would recreate it, so put nothing
+        // back. The backups stay: a moved folder's user still needs those originals.
         if (!Directory.Exists(r.Folder))
         {
-            try
-            {
-                Try(true, () => { if (Directory.Exists(backupDir)) Directory.Delete(backupDir, recursive: true); });
-                _receipts.Delete(r.EmulatorId, r.OptionId);
-            }
+            try { _receipts.Delete(r.EmulatorId, r.OptionId); }
             catch (Exception ex)
             {
                 return new OpResult(false, key, $"uninstall stopped part-way ({ex.Message}); fix that and run it again");
             }
-            return new OpResult(true, key,
-                $"uninstalled {emu.Name} {label}; warning: the settings folder {r.Folder} no longer exists, so there was nothing to put back");
+            var gone = $"the settings folder {r.Folder} no longer exists, so there was nothing to put back";
+            if (HasEntries(backupDir)) gone += $"; the files it had replaced are kept in {backupDir}";
+            return new OpResult(true, key, $"uninstalled {emu.Name} {label}; warning: {gone}");
         }
 
         var warnings = new List<string>();
@@ -413,6 +433,8 @@ public sealed class EmulatorInstaller
         return bk is not null && File.Exists(bk)
             && string.Equals(Installer.Sha256HexFile(bk), sha, StringComparison.OrdinalIgnoreCase);
     }
+
+    static bool HasEntries(string dir) => Directory.Exists(dir) && Directory.EnumerateFileSystemEntries(dir).Any();
 
     static void DeleteBackups(string backupDir) =>
         Try(true, () => { if (Directory.Exists(backupDir)) Directory.Delete(backupDir, recursive: true); });

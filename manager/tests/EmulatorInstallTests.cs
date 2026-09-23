@@ -75,6 +75,87 @@ public class EmulatorInstallTests
         Assert.Equal("OLD", EmuFixture.Read(backupDir, "blocked/a.cfg"));
     }
 
+    // A rollback that could not put an original back must keep the backups and say where they
+    // are, never claim "nothing changed". Driven directly for the same reason as the test above.
+    [Fact]
+    public void Rollback_that_cannot_put_an_original_back_keeps_the_backups_and_says_where()
+    {
+        var folder = EmuFixture.TempFolder();
+        var backupDir = EmuFixture.TempFolder("Backup");
+        EmuFixture.Write(backupDir, "blocked/a.cfg", "OLD");
+        EmuFixture.Write(folder, "blocked", "X");
+
+        var msg = EmulatorInstaller.RollBack(folder, new List<AppliedEdit>(), new List<InstalledFile>(),
+            new List<BackupRef> { new("blocked/a.cfg") }, backupDir, "boom");
+
+        Assert.Equal($"install failed (boom); could not put back blocked/a.cfg. The originals are kept in {backupDir}.", msg);
+        Assert.Equal("OLD", EmuFixture.Read(backupDir, "blocked/a.cfg"));
+    }
+
+    // Backups with no receipt are the only copies of originals a failed install could not put
+    // back. Installing again would back up over them.
+    [Fact]
+    public async Task Install_refuses_while_orphaned_backups_exist()
+    {
+        var paths = EmuFixture.TempPaths();
+        var folder = EmuFixture.TempFolder();
+        EmuFixture.Write(folder, "emu.ini", Original);
+        var zip = EmuFixture.Package(SetXInput, ("ctrlr/vrlf.cfg", "NEW"));
+        var opt = EmuFixture.Option("base", zip);
+        var (inst, receipts, _) = EmuFixture.MakeInstaller(paths, (opt, zip));
+        var backupDir = paths.EmuBackupDir("testemu", "base");
+        EmuFixture.Write(backupDir, "ctrlr/vrlf.cfg", "OLD");
+
+        var res = await inst.Install(EmuFixture.Entry(opt), opt, folder);
+
+        Assert.False(res.Ok);
+        Assert.Equal($"A previous install left backups in {backupDir}. Put those files back or delete that folder, then install again.",
+            res.Message);
+        Assert.Equal(Original, EmuFixture.Read(folder, "emu.ini"));
+        Assert.False(File.Exists(EmuFixture.PathOf(folder, "ctrlr/vrlf.cfg")));
+        Assert.Null(receipts.Load("testemu", "base"));
+        Assert.Equal("OLD", EmuFixture.Read(backupDir, "ctrlr/vrlf.cfg"));
+    }
+
+    [Fact]
+    public async Task Install_ignores_an_empty_leftover_backup_folder()
+    {
+        var paths = EmuFixture.TempPaths();
+        var folder = EmuFixture.TempFolder();
+        EmuFixture.Write(folder, "emu.ini", Original);
+        var zip = EmuFixture.Package(SetXInput);
+        var opt = EmuFixture.Option("base", zip);
+        var (inst, _, _) = EmuFixture.MakeInstaller(paths, (opt, zip));
+        Directory.CreateDirectory(paths.EmuBackupDir("testemu", "base"));
+
+        var res = await inst.Install(EmuFixture.Entry(opt), opt, folder);
+
+        Assert.True(res.Ok, res.Message);
+    }
+
+    // Regression: a receipt that failed to parse read as "not installed", so Install went ahead
+    // and recorded the already-changed settings as the user's originals.
+    [Fact]
+    public async Task Install_refuses_over_a_damaged_receipt()
+    {
+        var paths = EmuFixture.TempPaths();
+        var folder = EmuFixture.TempFolder();
+        EmuFixture.Write(folder, "emu.ini", Original);
+        var zip = EmuFixture.Package(SetXInput);
+        var opt = EmuFixture.Option("base", zip);
+        var (inst, _, _) = EmuFixture.MakeInstaller(paths, (opt, zip));
+        var receiptPath = paths.EmuReceiptPath("testemu", "base");
+        Directory.CreateDirectory(Path.GetDirectoryName(receiptPath)!);
+        File.WriteAllText(receiptPath, "{ not a receipt");
+
+        var res = await inst.Install(EmuFixture.Entry(opt), opt, folder);
+
+        Assert.False(res.Ok);
+        Assert.Equal($"base label has a damaged receipt at {receiptPath}. Repair or delete it before installing.", res.Message);
+        Assert.Equal(Original, EmuFixture.Read(folder, "emu.ini"));
+        Assert.Equal("{ not a receipt", File.ReadAllText(receiptPath));
+    }
+
     [Fact]
     public async Task Install_refuses_while_the_emulator_runs_and_changes_nothing()
     {

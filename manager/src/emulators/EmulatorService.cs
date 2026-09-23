@@ -109,21 +109,31 @@ public sealed class EmulatorService
     }
 
     /// <summary>Removes one option and everything that needs it (dependants first), or all
-    /// options when <paramref name="optionId"/> is null. Stops at the first failure so a base is
-    /// never removed from under an add-on that is still installed.</summary>
+    /// options when <paramref name="optionId"/> is null: then first any installed option that
+    /// <c>mods.json</c> no longer lists, which nothing else could ever remove. Stops at the first
+    /// failure so a base is never removed from under an add-on that is still installed.</summary>
     public async Task<ActionReport> Uninstall(string id, string? optionId)
     {
         var (emu, fail) = await Find(id, "uninstall");
         if (emu is null) return fail!;
         IEnumerable<EmulatorOption> scope = emu.Options;
+        var results = new List<OpResult>();
         if (optionId is not null)
         {
             var root = Option(emu, optionId);
             if (root is null) return Fail("uninstall", $"{emu.Id} has no option '{optionId}'", emu.Id);
             scope = emu.Options.Where(o => o.Id == root.Id || DependsOn(emu, o, root.Id));
         }
+        else
+        {
+            foreach (var r in _receipts.ForEmulator(emu.Id).Where(x => Option(emu, x.OptionId) is null))
+            {
+                var res = _installer.Uninstall(emu, r);
+                results.Add(res);
+                if (!res.Ok) return new ActionReport(false, "uninstall", results);
+            }
+        }
 
-        var results = new List<OpResult>();
         foreach (var o in scope.OrderByDescending(o => Depth(emu, o)))
         {
             var r = _receipts.Load(emu.Id, o.Id);

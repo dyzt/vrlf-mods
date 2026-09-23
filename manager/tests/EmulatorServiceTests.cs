@@ -148,6 +148,53 @@ public class EmulatorServiceTests
         Assert.Equal(before, EmuFixture.Read(dir, "emu.ini"));
     }
 
+    // Regression: uninstall-all walked only the registry's options, so a receipt for an option
+    // later dropped from mods.json could never be removed and kept the folder locked forever.
+    [Fact]
+    public async Task Uninstall_all_also_removes_options_the_registry_dropped()
+    {
+        var rig = Build();
+        var dir = SettingsFolder();
+        await rig.Svc.SetFolder("testemu", dir);
+        Assert.True((await rig.Svc.Install("testemu", "base")).Ok);
+        // "legacy" was installed while an older mods.json still listed it.
+        var zl = EmuFixture.Package("""{ "edits": [ { "file": "emu.ini", "format": "ini", "section": "A", "key": "legacy", "value": "1" } ] }""");
+        var legacy = EmuFixture.Option("legacy", zl);
+        var (older, _, _) = EmuFixture.MakeInstaller(rig.Paths, (legacy, zl));
+        Assert.True((await older.Install(EmuFixture.Entry(legacy), legacy, dir)).Ok);
+
+        var res = await rig.Svc.Uninstall("testemu", null);
+
+        Assert.True(res.Ok, string.Join("; ", res.Results.Select(r => r.Message)));
+        Assert.Equal(new[] { "testemu/legacy", "testemu/base" }, res.Results.Select(r => r.GameKey));
+        Assert.Contains("uninstalled TestEmu legacy", res.Results[0].Message);
+        Assert.Empty(rig.Receipts.ForEmulator("testemu"));
+        Assert.Equal("[A]\r\nx = 1\r\n", EmuFixture.Read(dir, "emu.ini"));
+        Assert.False((await rig.Svc.Status("testemu"))!.Locked);
+    }
+
+    [Fact]
+    public async Task Uninstall_all_stops_when_a_dropped_option_fails()
+    {
+        var rig = Build();
+        var dir = SettingsFolder();
+        await rig.Svc.SetFolder("testemu", dir);
+        Assert.True((await rig.Svc.Install("testemu", "base")).Ok);
+        var zl = EmuFixture.Package("""{ "edits": [ { "file": "emu.ini", "format": "ini", "section": "A", "key": "legacy", "value": "1" } ] }""");
+        var legacy = EmuFixture.Option("legacy", zl);
+        var (older, _, _) = EmuFixture.MakeInstaller(rig.Paths, (legacy, zl));
+        Assert.True((await older.Install(EmuFixture.Entry(legacy), legacy, dir)).Ok);
+
+        ActionReport res;
+        using (File.Open(EmuFixture.PathOf(dir, "emu.ini"), FileMode.Open, FileAccess.Read, FileShare.None))
+            res = await rig.Svc.Uninstall("testemu", null);
+
+        Assert.False(res.Ok);
+        Assert.Equal("testemu/legacy", Assert.Single(res.Results).GameKey);
+        Assert.NotNull(rig.Receipts.Load("testemu", "base"));
+        Assert.NotNull(rig.Receipts.Load("testemu", "legacy"));
+    }
+
     [Fact]
     public async Task The_folder_is_locked_while_anything_is_installed()
     {

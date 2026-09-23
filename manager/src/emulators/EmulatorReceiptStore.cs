@@ -9,12 +9,27 @@ public sealed class EmulatorReceiptStore
     private readonly AppPaths _paths;
     public EmulatorReceiptStore(AppPaths paths) => _paths = paths;
 
+    /// <summary>Writes via a temp file then renames over the receipt (like <see
+    /// cref="SettingsText.Save"/>), so a failed write never leaves it half-written.</summary>
     public void Save(EmulatorReceipt r)
     {
         Directory.CreateDirectory(_paths.EmuReceiptsDir);
-        File.WriteAllText(_paths.EmuReceiptPath(r.EmulatorId, r.OptionId),
-            JsonSerializer.Serialize(r, VrlfJson.Default.EmulatorReceipt));
+        var path = _paths.EmuReceiptPath(r.EmulatorId, r.OptionId);
+        var tmp = path + ".vrlf-tmp";
+        try
+        {
+            File.WriteAllText(tmp, JsonSerializer.Serialize(r, VrlfJson.Default.EmulatorReceipt));
+            File.Move(tmp, path, overwrite: true);
+        }
+        catch
+        {
+            try { File.Delete(tmp); } catch { /* best effort */ }
+            throw;
+        }
     }
+
+    /// <summary>The receipt file is there, whether or not it still parses.</summary>
+    public bool Exists(string emu, string opt) => File.Exists(_paths.EmuReceiptPath(emu, opt));
 
     public EmulatorReceipt? Load(string emu, string opt)
     {

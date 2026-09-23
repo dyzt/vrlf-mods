@@ -132,6 +132,39 @@ public class EmulatorModelTests
     }
 
     [Fact]
+    public void Receipt_save_leaves_no_temp_file()
+    {
+        var paths = TempPaths();
+        var store = new EmulatorReceiptStore(paths);
+
+        store.Save(Sample());
+
+        Assert.False(File.Exists(paths.EmuReceiptPath("dolphin", "base") + ".vrlf-tmp"));
+        Assert.Equal(new[] { "dolphin-base.json" },
+            Directory.EnumerateFiles(paths.EmuReceiptsDir).Select(Path.GetFileName));
+        Assert.NotNull(store.Load("dolphin", "base"));
+    }
+
+    // Regression: Save wrote the receipt in place, so a failed write could leave it half-written,
+    // which then reads as "not installed". The old receipt must survive a failed save whole.
+    [Fact]
+    public void Receipt_save_leaves_the_old_receipt_untouched_if_the_write_fails()
+    {
+        var paths = TempPaths();
+        var store = new EmulatorReceiptStore(paths);
+        store.Save(Sample());
+        var path = paths.EmuReceiptPath("dolphin", "base");
+        var before = File.ReadAllBytes(path);
+
+        // ReadWrite sharing lets a direct write land on the receipt but blocks the rename.
+        using (new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            Assert.ThrowsAny<Exception>(() => store.Save(Sample() with { Version = "2.0" }));
+
+        Assert.Equal(before, File.ReadAllBytes(path));
+        Assert.False(File.Exists(path + ".vrlf-tmp"));
+    }
+
+    [Fact]
     public void ForEmulator_and_Delete_work_by_id()
     {
         var store = new EmulatorReceiptStore(TempPaths());
