@@ -82,7 +82,7 @@ public static class Tui
                 case ActionKind.Refresh:
                     message = "refreshed";
                     list = await mm.List();
-                    if (state.ModId is not null) cfg = await LoadConfig(mm, list, state.ModId);
+                    if (state.Screen == Screen.Mod && state.ModId is not null) cfg = await LoadConfig(mm, list, state.ModId);
                     break;
                 case ActionKind.SetPath:
                     message = await PromptForPath(mm, action.ModId!, action.Appid);
