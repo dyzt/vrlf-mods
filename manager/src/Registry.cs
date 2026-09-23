@@ -26,8 +26,15 @@ public record ModEntry(
     string? Notes,
     ConfigManifest? Config = null);
 
-public record ModRegistry(int Schema, VigemInfo Vigembus, List<ModEntry> Mods, VirtualGunInfo? Virtualgun = null)
+public record ModRegistry(int Schema, VigemInfo Vigembus, List<ModEntry> Mods, VirtualGunInfo? Virtualgun = null,
+    List<EmulatorEntry>? Emulators = null)
 {
     public ModEntry? Find(string id) =>
         Mods.FirstOrDefault(m => string.Equals(m.Id, id, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>The emulators list; a registry from before emulators existed has none.</summary>
+    [JsonIgnore] public List<EmulatorEntry> EmulatorList => Emulators ?? new();
+
+    public EmulatorEntry? FindEmulator(string id) =>
+        EmulatorList.FirstOrDefault(e => string.Equals(e.Id, id, StringComparison.OrdinalIgnoreCase));
 }

@@ -22,5 +22,14 @@ public sealed class AppPaths
     public string BackupDir(string modId, string gameKey)
         => Path.Combine(BackupsDir, modId, gameKey);
 
+    public string EmulatorsRoot => Path.Combine(ModsRoot, "emulators");
+    public string EmuReceiptsDir => Path.Combine(EmulatorsRoot, "receipts");
+
+    public string EmuReceiptPath(string emu, string opt)
+        => Path.Combine(EmuReceiptsDir, $"{emu}-{opt}.json");
+
+    public string EmuBackupDir(string emu, string opt)
+        => Path.Combine(EmulatorsRoot, "backups", emu, opt);
+
     public static string GameKeyForAppid(long appid) => appid.ToString();
 }
