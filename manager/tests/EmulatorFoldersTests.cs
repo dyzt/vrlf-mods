@@ -126,6 +126,23 @@ public class EmulatorFoldersTests
     }
 
     [Fact]
+    public void Resolve_names_the_found_install_when_there_are_several_candidates()
+    {
+        var (f, _, docs, appdata) = Build();
+        var entry = new EmulatorEntry("x", "X", new(), new() { "x.exe" },
+            new() { "%APPDATA%/X", "%DOCUMENTS%/X" }, new() { "x.ini" }, new());
+        Touch(Path.Combine(docs, "X"), "x.ini");   // only the second candidate exists, with the marker
+        var prog = Temp("X-prog");
+        Touch(prog, "x.exe");
+
+        var c = f.Resolve(entry, prog);
+
+        Assert.False(c.Ok);
+        Assert.Contains(Path.Combine(docs, "X"), c.Error);
+        Assert.DoesNotContain(Path.Combine(appdata, "X"), c.Error);
+    }
+
+    [Fact]
     public void Resolve_handles_spaces_brackets_and_parentheses()
     {
         var (f, _, _, _) = Build();

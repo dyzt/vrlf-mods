@@ -88,7 +88,7 @@ public sealed class EmulatorFolders
 
         if (e.Exe.Any(x => Matches(full, x)))
         {
-            var home = e.Locate.Select(Expand).FirstOrDefault(p => p is not null);
+            var home = Suggest(e) ?? e.Locate.Select(Expand).FirstOrDefault(p => p is not null);
             return new(false, full, home is null
                 ? $"This {e.Name} is not portable, so its settings live elsewhere. For a separate lightgun setup, use a portable {e.Name}."
                 : $"This {e.Name} keeps its settings in {home}, which your other {e.Name} copies share. For a separate lightgun setup, use a portable {e.Name}.");
