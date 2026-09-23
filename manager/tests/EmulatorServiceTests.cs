@@ -197,6 +197,72 @@ public class EmulatorServiceTests
     }
 
     [Fact]
+    public async Task Install_names_the_missing_default_option_as_base()
+    {
+        var paths = EmuFixture.TempPaths();
+        var z = EmuFixture.Package("""{ "edits": [] }""");
+        var custom = EmuFixture.Option("custom", z);
+        var emu = EmuFixture.Entry(custom);
+        var reg = new ModRegistry(1, new VigemInfo("nefarius/ViGEmBus", "v1.22.0"), new(), null, new() { emu });
+        var http = new FakeHttpFetcher(new()
+        {
+            [RegistryLoader.RawBase + "/mods.json"] = JsonSerializer.SerializeToUtf8Bytes(reg, VrlfJson.Default.ModRegistry),
+        });
+        var receipts = new EmulatorReceiptStore(paths);
+        var svc = new EmulatorService(new RegistryLoader(http, paths),
+            new EmulatorFolders(new GamePathStore(paths), new FakeKnownFolders(new())),
+            new EmulatorInstaller(http, paths, receipts, new FakeProcessProbe()), receipts,
+            new Vigem(new FakeServiceDetector(true), http, new FakeLauncher(), paths));
+
+        var res = await svc.Install("testemu", null);
+
+        Assert.False(res.Ok);
+        Assert.Contains("has no option 'base'", res.Results[0].Message);
+    }
+
+    // Regression: DependsOn only stopped on a direct self-reference. "a" and "b" require each
+    // other, an indirect (two-hop) cycle unrelated to the option actually targeted ("c"); walking
+    // that cycle while scoping the cascade for "c" never reaches "c" and never finds a repeated
+    // reference either, so the old code spun forever. This exercise deliberately targets an
+    // unrelated option rather than "a" or "b" themselves - within a 2-cycle, asking whether the
+    // OTHER member depends on either "a" or "b" always matches on the very first hop (it directly
+    // requires that target), so only a target outside the cycle actually walks it far enough to
+    // hang the old code.
+    [Fact]
+    public async Task Uninstall_terminates_on_a_requires_cycle()
+    {
+        var paths = EmuFixture.TempPaths();
+        var zc = EmuFixture.Package("""{ "edits": [] }""");
+        var za = EmuFixture.Package("""{ "edits": [] }""");
+        var zb = EmuFixture.Package("""{ "edits": [] }""");
+        var oc = EmuFixture.Option("c", zc);
+        var oa = EmuFixture.Option("a", za, requires: "b");
+        var ob = EmuFixture.Option("b", zb, requires: "a");
+        var emu = EmuFixture.Entry(oc, oa, ob);
+        var reg = new ModRegistry(1, new VigemInfo("nefarius/ViGEmBus", "v1.22.0"), new(), null, new() { emu });
+        var http = new FakeHttpFetcher(new()
+        {
+            [RegistryLoader.RawBase + "/mods.json"] = JsonSerializer.SerializeToUtf8Bytes(reg, VrlfJson.Default.ModRegistry),
+        });
+        var receipts = new EmulatorReceiptStore(paths);
+        var folder = EmuFixture.TempFolder();
+        // Installed directly via receipts, bypassing the service's own requires gate on Install.
+        foreach (var opt in new[] { oc, oa, ob })
+            receipts.Save(new EmulatorReceipt(emu.Id, opt.Id, opt.Version, folder, new(), new(), new(), "2026-01-01T00:00:00Z"));
+        var svc = new EmulatorService(new RegistryLoader(http, paths),
+            new EmulatorFolders(new GamePathStore(paths), new FakeKnownFolders(new())),
+            new EmulatorInstaller(http, paths, receipts, new FakeProcessProbe()), receipts,
+            new Vigem(new FakeServiceDetector(true), http, new FakeLauncher(), paths));
+
+        var task = svc.Uninstall("testemu", "c");
+        var finished = await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(5)));
+
+        Assert.Same(task, finished);
+        var res = await task;
+        Assert.True(res.Ok, string.Join("; ", res.Results.Select(r => r.Message)));
+    }
+
+    [Fact]
     public async Task ModManager_List_carries_the_emulators()
     {
         var rig = Build();

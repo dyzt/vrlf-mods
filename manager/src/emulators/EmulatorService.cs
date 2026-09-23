@@ -28,10 +28,15 @@ public sealed class EmulatorService
 
     public List<EmulatorStatus> StatusesFor(ModRegistry reg) => reg.EmulatorList.Select(StatusFor).ToList();
 
+    /// <summary>Where an emulator's options are (or will be) installed: an existing receipt's
+    /// folder wins, else the one the user chose. The one rule both <see cref="StatusFor"/> and
+    /// <see cref="Install"/> use.</summary>
+    string? FolderFor(EmulatorEntry e) => _receipts.ForEmulator(e.Id).FirstOrDefault()?.Folder ?? _folders.Chosen(e);
+
     public EmulatorStatus StatusFor(EmulatorEntry e)
     {
         var receipts = _receipts.ForEmulator(e.Id);
-        var folder = receipts.FirstOrDefault()?.Folder ?? _folders.Chosen(e);
+        var folder = FolderFor(e);
         var options = e.Options.Select(o => new EmulatorOptionStatus(o.Id, o.Label, o.Short ?? o.Label, o.Version,
             receipts.FirstOrDefault(r => r.OptionId == o.Id)?.Version, o.Requires)).ToList();
         bool needsMet = e.Needs switch { null => true, "vigembus" => _vigem.IsInstalled(), _ => false };
@@ -90,9 +95,9 @@ public sealed class EmulatorService
         var (emu, fail) = await Find(id, "install");
         if (emu is null) return fail!;
         var opt = Option(emu, optionId ?? "base");
-        if (opt is null) return Fail("install", $"{emu.Id} has no option '{optionId}'", emu.Id);
+        if (opt is null) return Fail("install", $"{emu.Id} has no option '{optionId ?? "base"}'", emu.Id);
 
-        var folder = _receipts.ForEmulator(emu.Id).FirstOrDefault()?.Folder ?? _folders.Chosen(emu);
+        var folder = FolderFor(emu);
         if (folder is null) return Fail("install", $"choose {emu.Name}'s settings folder first", emu.Id);
         if (!Directory.Exists(folder))
             return Fail("install", $"{emu.Name}'s settings folder is no longer there: {folder}", emu.Id);
@@ -152,13 +157,17 @@ public sealed class EmulatorService
     static EmulatorOption? Option(EmulatorEntry e, string id) =>
         e.Options.FirstOrDefault(o => string.Equals(o.Id, id, StringComparison.OrdinalIgnoreCase));
 
+    /// <summary>Bounded the same way <see cref="Depth"/> is: an entry's own <c>requires</c> chain
+    /// is fetched live from <c>mods.json</c> and never validated, so an indirect cycle (A requires
+    /// B, B requires A) must not walk forever just because it isn't a direct self-reference.</summary>
     static bool DependsOn(EmulatorEntry e, EmulatorOption o, string target)
     {
-        for (var cur = o; cur.Requires is { } req; )
+        var cur = o;
+        for (int steps = 0; cur.Requires is { } req && steps < e.Options.Count; steps++)
         {
             if (string.Equals(req, target, StringComparison.OrdinalIgnoreCase)) return true;
             var next = Option(e, req);
-            if (next is null || ReferenceEquals(next, cur)) return false;
+            if (next is null) return false;
             cur = next;
         }
         return false;
