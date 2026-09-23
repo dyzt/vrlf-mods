@@ -3,7 +3,8 @@ using System.Text.Json;
 namespace VrlfMods;
 
 /// <summary>
-/// Where the user has manually told us a game lives, keyed by Steam appid.
+/// Where the user has manually told us a game (keyed by Steam appid) or an emulator's settings
+/// folder (keyed emu:&lt;id&gt;) lives.
 /// Persistence only — it stores what it is given; validation is <see cref="GamePathCheck"/>'s job.
 /// </summary>
 public sealed class GamePathStore
@@ -22,11 +23,13 @@ public sealed class GamePathStore
         catch { return new(); }   // a corrupt file must not take the whole tool down
     }
 
-    public string? Get(long appid) => All().TryGetValue(appid.ToString(), out var p) ? p : null;
+    public string? Get(string key) => All().TryGetValue(key, out var p) ? p : null;
+    public void Set(string key, string dir) => Write(map => map[key] = dir);
+    public void Clear(string key) => Write(map => map.Remove(key));
 
-    public void Set(long appid, string dir) => Write(map => map[appid.ToString()] = dir);
-
-    public void Clear(long appid) => Write(map => map.Remove(appid.ToString()));
+    public string? Get(long appid) => Get(appid.ToString());
+    public void Set(long appid, string dir) => Set(appid.ToString(), dir);
+    public void Clear(long appid) => Clear(appid.ToString());
 
     private void Write(Action<Dictionary<string, string>> mutate)
     {

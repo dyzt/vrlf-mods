@@ -84,3 +84,10 @@ public sealed class FakePatch : VrlfMods.Patches.IReversiblePatch
     public VrlfMods.OpResult Revert(string p, string k)
     { Reverts++; return new(_revertOk, k, _revertOk ? "reverted" : "no .vrlf-backup found"); }
 }
+
+public sealed class FakeKnownFolders : VrlfMods.IKnownFolders
+{
+    private readonly Dictionary<string, string> _map;
+    public FakeKnownFolders(Dictionary<string, string> map) => _map = map;
+    public string? Resolve(string token) => _map.TryGetValue(token.ToUpperInvariant(), out var p) ? p : null;
+}
