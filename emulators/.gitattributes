@@ -1,0 +1,3 @@
+# Package sources and zips are stored byte for byte: build.py hashes them, and
+# core.autocrlf would otherwise rewrite CRLF files on checkout and change every sha256.
+* -text
