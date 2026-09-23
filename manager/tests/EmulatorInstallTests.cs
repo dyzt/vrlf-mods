@@ -52,6 +52,28 @@ public class EmulatorInstallTests
         Assert.Single(receipts.Load("testemu", "base")!.Backups);
     }
 
+    // Regression: rollback used to delete the backup folder unconditionally, even when a restore
+    // in that same rollback failed - the only surviving copy of the user's original would be gone.
+    // Reaching this through a full Install rollback would need a lock injected between a
+    // successful extraction and the later failure that triggers rollback, which a synchronous
+    // test cannot do, so this drives the (internal) helper directly.
+    [Fact]
+    public void RemoveFiles_keeps_the_backup_folder_when_a_restore_fails()
+    {
+        var folder = EmuFixture.TempFolder();
+        var backupDir = EmuFixture.TempFolder("Backup");
+        EmuFixture.Write(backupDir, "blocked/a.cfg", "OLD");
+        // "blocked" is a FILE where the restore needs a folder, so Directory.CreateDirectory
+        // throws while copying this backup back - the one restore attempt made, and it fails.
+        EmuFixture.Write(folder, "blocked", "X");
+
+        EmulatorInstaller.RemoveFiles(folder, new List<InstalledFile>(),
+            new List<BackupRef> { new("blocked/a.cfg") }, backupDir, warnings: null, bestEffort: true);
+
+        Assert.True(Directory.Exists(backupDir));
+        Assert.Equal("OLD", EmuFixture.Read(backupDir, "blocked/a.cfg"));
+    }
+
     [Fact]
     public async Task Install_refuses_while_the_emulator_runs_and_changes_nothing()
     {
@@ -137,6 +159,41 @@ public class EmulatorInstallTests
         Assert.False(File.Exists(EmuFixture.PathOf(folder, "made.ini")));
         Assert.False(Directory.Exists(EmuFixture.PathOf(folder, "inputprofiles")));
         Assert.Null(receipts.Load("testemu", "base"));
+        Assert.False(Directory.Exists(paths.EmuBackupDir("testemu", "base")));
+    }
+
+    [Fact]
+    public async Task Install_rejects_unsafe_or_duplicate_file_entries_before_writing()
+    {
+        var paths = EmuFixture.TempPaths();
+        var folder = EmuFixture.TempFolder();
+        EmuFixture.Write(folder, "emu.ini", Original);
+        var unsafeZip = EmuFixture.Package(SetXInput, ("b.ini:x", "X"));
+        var unsafeOpt = EmuFixture.Option("base", unsafeZip);
+        var (unsafeInst, unsafeReceipts, _) = EmuFixture.MakeInstaller(paths, (unsafeOpt, unsafeZip));
+
+        var unsafeRes = await unsafeInst.Install(EmuFixture.Entry(unsafeOpt), unsafeOpt, folder);
+
+        Assert.False(unsafeRes.Ok);
+        Assert.False(File.Exists(EmuFixture.PathOf(folder, "b.ini")));
+        Assert.False(File.Exists(EmuFixture.PathOf(folder, "b.ini:x")));
+        Assert.Equal(Original, EmuFixture.Read(folder, "emu.ini"));
+        Assert.Null(unsafeReceipts.Load("testemu", "base"));
+
+        var dupPaths = EmuFixture.TempPaths();
+        var dupFolder = EmuFixture.TempFolder();
+        EmuFixture.Write(dupFolder, "emu.ini", Original);
+        var dupZip = EmuFixture.Package(SetXInput, ("a.ini", "X"), ("A.INI", "Y"));
+        var dupOpt = EmuFixture.Option("base", dupZip);
+        var (dupInst, dupReceipts, _) = EmuFixture.MakeInstaller(dupPaths, (dupOpt, dupZip));
+
+        var dupRes = await dupInst.Install(EmuFixture.Entry(dupOpt), dupOpt, dupFolder);
+
+        Assert.False(dupRes.Ok);
+        Assert.False(File.Exists(EmuFixture.PathOf(dupFolder, "a.ini")));
+        Assert.False(File.Exists(EmuFixture.PathOf(dupFolder, "A.INI")));
+        Assert.Equal(Original, EmuFixture.Read(dupFolder, "emu.ini"));
+        Assert.Null(dupReceipts.Load("testemu", "base"));
     }
 
     [Fact]

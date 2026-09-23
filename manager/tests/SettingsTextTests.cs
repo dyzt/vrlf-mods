@@ -68,4 +68,36 @@ public class SettingsTextTests
         Assert.True(t.Bom);
         Assert.Equal("[A]", t.Lines[0].Text);
     }
+
+    [Fact]
+    public void Save_leaves_no_temp_file_behind()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "vrlf-st-" + Guid.NewGuid().ToString("N") + ".ini");
+        var t = SettingsText.Parse("[A]\r\nx = 1\r\n");
+
+        t.Save(path);
+
+        Assert.False(File.Exists(path + ".vrlf-tmp"));
+        Assert.Equal(t.ToBytes(), File.ReadAllBytes(path));
+    }
+
+    // Regression: Save used to truncate-then-write the target directly. A failed write left the
+    // settings file half-written; it must instead land untouched, with no orphan temp file.
+    [Fact]
+    public void Save_leaves_the_target_untouched_if_the_write_fails()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "vrlf-st-" + Guid.NewGuid().ToString("N") + ".ini");
+        var original = Encoding.Latin1.GetBytes("[A]\r\nx = 1\r\n");
+        File.WriteAllBytes(path, original);
+        var t = SettingsText.Parse("[A]\r\nx = 2\r\n");
+
+        // ReadWrite sharing permits a direct write to land straight on the target (which is
+        // exactly the unsafe behaviour this guards against) but not Delete, so the atomic
+        // rename this fix relies on still fails cleanly.
+        using (new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            Assert.ThrowsAny<Exception>(() => t.Save(path));
+
+        Assert.Equal(original, File.ReadAllBytes(path));
+        Assert.False(File.Exists(path + ".vrlf-tmp"));
+    }
 }

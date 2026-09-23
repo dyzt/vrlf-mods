@@ -22,7 +22,7 @@ public class EmulatorUninstallTests
     {
         ["emu.ini"] = "[UI]\r\nTheme = dark\r\n\r\n[InputSources]\r\nSDL = true\r\nXInput = false\r\n\r\n[Pad1]\r\nType = DualShock2\r\nCross = SDL-0/A\r\n",
         ["lf.ini"] = "[A]\nx = 1\n[B]\ny = 2",
-        ["bom.ini"] = "ï»¿[Server]\r\nEnabled = False\r\n",   // Latin-1 view of a UTF-8 BOM
+        ["bom.ini"] = "\u00EF\u00BB\u00BF[Server]\r\nEnabled = False\r\n",   // Latin-1 view of a UTF-8 BOM
         ["mame.ini"] = "lightgun 1\nwindow 1\n\nlightgun            0\njoystick_deadzone   0.15",
         ["ctrlr/vrlf.cfg"] = "OLD",
     };
@@ -127,6 +127,52 @@ public class EmulatorUninstallTests
         Assert.Null(receipts.Load("testemu", "base"));
     }
 
+    // Regression: receipt deletion used to sit outside the try, so an IO error there escaped as
+    // an unhandled exception instead of becoming a failed OpResult.
+    [Fact]
+    public async Task Uninstall_reports_failure_when_the_receipt_cannot_be_deleted()
+    {
+        var paths = EmuFixture.TempPaths();
+        var folder = EmuFixture.TempFolder();
+        EmuFixture.Write(folder, "emu.ini", Fixture["emu.ini"]);
+        var zip = EmuFixture.Package(V1);
+        var opt = EmuFixture.Option("base", zip);
+        var emu = EmuFixture.Entry(opt);
+        var (inst, receipts, _) = EmuFixture.MakeInstaller(paths, (opt, zip));
+        Assert.True((await inst.Install(emu, opt, folder)).Ok);
+        var receiptPath = paths.EmuReceiptPath("testemu", "base");
+        var r = receipts.Load("testemu", "base")!;
+
+        using var locked = new FileStream(receiptPath, FileMode.Open, FileAccess.Read, FileShare.None);
+        var res = inst.Uninstall(emu, r);
+
+        Assert.False(res.Ok);
+        Assert.Contains("uninstall stopped part-way", res.Message);
+    }
+
+    // Same regression, in the folder-gone branch.
+    [Fact]
+    public async Task Uninstall_reports_failure_when_the_receipt_cannot_be_deleted_after_the_folder_is_gone()
+    {
+        var paths = EmuFixture.TempPaths();
+        var folder = EmuFixture.TempFolder();
+        EmuFixture.Write(folder, "emu.ini", Fixture["emu.ini"]);
+        var zip = EmuFixture.Package(V1);
+        var opt = EmuFixture.Option("base", zip);
+        var emu = EmuFixture.Entry(opt);
+        var (inst, receipts, _) = EmuFixture.MakeInstaller(paths, (opt, zip));
+        Assert.True((await inst.Install(emu, opt, folder)).Ok);
+        var receiptPath = paths.EmuReceiptPath("testemu", "base");
+        var r = receipts.Load("testemu", "base")!;
+        Directory.Delete(folder, recursive: true);
+
+        using var locked = new FileStream(receiptPath, FileMode.Open, FileAccess.Read, FileShare.None);
+        var res = inst.Uninstall(emu, r);
+
+        Assert.False(res.Ok);
+        Assert.Contains("uninstall stopped part-way", res.Message);
+    }
+
     [Fact]
     public async Task Uninstall_refuses_while_the_emulator_runs_and_keeps_the_receipt()
     {
@@ -149,8 +195,27 @@ public class EmulatorUninstallTests
 
         var res = inst.Uninstall(emu, receipts.Load("testemu", "base")!);
 
+        Assert.True(res.Ok, res.Message);
         Assert.Contains("inputprofiles/p.ini had been changed", res.Message);
         Assert.False(File.Exists(EmuFixture.PathOf(folder, "inputprofiles/p.ini")));
+        Assert.Null(receipts.Load("testemu", "base"));
+    }
+
+    [Fact]
+    public async Task Uninstall_refuses_when_the_drive_is_not_connected()
+    {
+        var (inst, receipts, _, emu, _, _) = await Installed();
+        var used = DriveInfo.GetDrives().Select(d => d.Name[0]).ToHashSet();
+        var letter = "ZYXWVUTSRQPONMLKJIHGFEDCBA".First(c => !used.Contains(c));
+        var missingFolder = $@"{letter}:\Missing\Settings";
+        var moved = receipts.Load("testemu", "base")! with { Folder = missingFolder };
+        receipts.Save(moved);
+
+        var res = inst.Uninstall(emu, moved);
+
+        Assert.False(res.Ok);
+        Assert.Contains($"{letter}:", res.Message);
+        Assert.NotNull(receipts.Load("testemu", "base"));
     }
 
     // Regression: undoing newest-first matters only once a file is created by two separate
@@ -266,6 +331,80 @@ public class EmulatorUninstallTests
         Assert.Contains("kept v1.0", res.Message);
         Assert.Equal(before, EmuFixture.Read(folder, "emu.ini"));
         Assert.Equal("1.0", receipts.Load("testemu", "base")!.Version);
+    }
+
+    [Fact]
+    public async Task Update_with_an_unreadable_package_keeps_the_installed_version()
+    {
+        var paths = EmuFixture.TempPaths();
+        var folder = EmuFixture.TempFolder();
+        EmuFixture.Write(folder, "emu.ini", Fixture["emu.ini"]);
+        var z1 = EmuFixture.Package(V1);
+        var badZ2 = EmuFixture.Package("""
+        { "edits": [ { "file": "emu.ini", "format": "toml", "section": "InputSources", "key": "XInput", "value": "yes" } ] }
+        """);
+        var v1 = EmuFixture.Option("base", z1, "1.0");
+        var v2 = EmuFixture.Option("base", badZ2, "2.0");
+        var emu = EmuFixture.Entry(v2);
+        var (inst, receipts, _) = EmuFixture.MakeInstaller(paths, (v1, z1), (v2, badZ2));
+        Assert.True((await inst.Install(emu, v1, folder)).Ok);
+        var before = EmuFixture.Read(folder, "emu.ini");
+
+        var res = await inst.Refresh(emu, v2, receipts.Load("testemu", "base")!, onlyIfNewer: true);
+
+        Assert.False(res.Ok);
+        Assert.Contains("kept v1.0", res.Message);
+        Assert.Equal(before, EmuFixture.Read(folder, "emu.ini"));
+        Assert.Equal("1.0", receipts.Load("testemu", "base")!.Version);
+    }
+
+    [Fact]
+    public async Task Update_keeps_a_changed_installed_file_and_says_so()
+    {
+        var paths = EmuFixture.TempPaths();
+        var folder = EmuFixture.TempFolder();
+        var z1 = EmuFixture.Package(V1, ("ctrlr/vrlf.cfg", "V1CONTENT"));
+        var z2 = EmuFixture.Package(V2, ("ctrlr/vrlf.cfg", "V2CONTENT"));
+        var v1 = EmuFixture.Option("base", z1, "1.0");
+        var v2 = EmuFixture.Option("base", z2, "2.0");
+        var emu = EmuFixture.Entry(v2);
+        var (inst, receipts, _) = EmuFixture.MakeInstaller(paths, (v1, z1), (v2, z2));
+        Assert.True((await inst.Install(emu, v1, folder)).Ok);
+        EmuFixture.Write(folder, "ctrlr/vrlf.cfg", "USER EDITED");   // changed since install
+
+        var res = await inst.Refresh(emu, v2, receipts.Load("testemu", "base")!, onlyIfNewer: true);
+
+        Assert.True(res.Ok, res.Message);
+        Assert.Contains("kept your changed file(s)", res.Message);
+        Assert.Contains("ctrlr/vrlf.cfg.bak-1.0", res.Message);
+        // The same change also makes the underlying Uninstall warn as it removes the file - that
+        // warning must carry through into Refresh's own message, not get swallowed.
+        Assert.Contains("; warning: ctrlr/vrlf.cfg had been changed since install and was removed", res.Message);
+        Assert.Equal("USER EDITED", EmuFixture.Read(folder, "ctrlr/vrlf.cfg.bak-1.0"));
+        Assert.Equal("V2CONTENT", EmuFixture.Read(folder, "ctrlr/vrlf.cfg"));
+    }
+
+    [Fact]
+    public async Task Update_that_fails_after_removing_says_so()
+    {
+        var paths = EmuFixture.TempPaths();
+        var folder = EmuFixture.TempFolder();
+        var z1 = EmuFixture.Package(V1);
+        var z2 = EmuFixture.Package("""
+        { "edits": [ { "file": "blocked.ini", "format": "ini", "section": "A", "key": "k", "value": "v" } ] }
+        """);
+        var v1 = EmuFixture.Option("base", z1, "1.0");
+        var v2 = EmuFixture.Option("base", z2, "2.0");
+        var emu = EmuFixture.Entry(v2);
+        var (inst, receipts, _) = EmuFixture.MakeInstaller(paths, (v1, z1), (v2, z2));
+        Assert.True((await inst.Install(emu, v1, folder)).Ok);
+        Directory.CreateDirectory(EmuFixture.PathOf(folder, "blocked.ini"));  // v2's edit can't land here
+
+        var res = await inst.Refresh(emu, v2, receipts.Load("testemu", "base")!, onlyIfNewer: true);
+
+        Assert.False(res.Ok);
+        Assert.Contains("removed v1.0", res.Message);
+        Assert.Null(receipts.Load("testemu", "base"));
     }
 
     [Fact]

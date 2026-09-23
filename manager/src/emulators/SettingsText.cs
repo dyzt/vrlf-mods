@@ -62,10 +62,22 @@ public sealed class SettingsText
         return all;
     }
 
+    /// <summary>Writes via a temp file then renames over the target, so a failed write never
+    /// leaves the settings file half-written.</summary>
     public void Save(string path)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllBytes(path, ToBytes());
+        var tmp = path + ".vrlf-tmp";
+        try
+        {
+            File.WriteAllBytes(tmp, ToBytes());
+            File.Move(tmp, path, overwrite: true);
+        }
+        catch
+        {
+            try { File.Delete(tmp); } catch { /* best effort */ }
+            throw;
+        }
     }
 
     /// <summary>The ending new lines get: the file's most common one, CRLF for an empty file

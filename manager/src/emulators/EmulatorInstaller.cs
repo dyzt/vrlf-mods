@@ -75,6 +75,65 @@ public sealed class EmulatorInstaller
         return (s, null);
     }
 
+    /// <summary>An entry whose relative name would land outside the settings folder or otherwise
+    /// isn't a plain relative path.</summary>
+    static string? UnsafeRelPath(string rel)
+    {
+        var parts = rel.Split('/');
+        if (Path.IsPathRooted(rel) || rel.Contains(':') || parts.Contains(".."))
+            return $"package file {rel} is not a plain relative path";
+        return null;
+    }
+
+    /// <summary>A package opened and checked against a settings folder before anything touches
+    /// the disk: the zip opens, settings.json parses and every edit passes <see
+    /// cref="EditSpec.Problem"/>, and every <c>files/</c> entry resolves to a safe, unique
+    /// destination. Used by both <see cref="Install"/> and <see cref="Refresh"/>.</summary>
+    sealed class PreparedPackage : IDisposable
+    {
+        public required ZipArchive Zip { get; init; }
+        public required PackageSettings Settings { get; init; }
+        public required List<(ZipArchiveEntry Entry, string Rel, string Dest)> Files { get; init; }
+        public void Dispose() => Zip.Dispose();
+    }
+
+    static (PreparedPackage? package, string? error) Prepare(byte[] bytes, string folder)
+    {
+        ZipArchive zip;
+        try { zip = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read); }
+        catch (Exception ex) { return (null, $"package is not a zip: {ex.Message}"); }
+
+        var (settings, problem) = ReadSettings(zip);
+        if (settings is null) { zip.Dispose(); return (null, problem); }
+
+        var files = new List<(ZipArchiveEntry Entry, string Rel, string Dest)>();
+        var seen = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var entry in zip.Entries)
+        {
+            var name = Zip.NormalizeEntryName(entry.FullName);
+            if (!name.StartsWith("files/", StringComparison.Ordinal) || name.EndsWith('/')) continue;
+            var rel = name["files/".Length..];
+            if (rel.Length == 0) continue;
+
+            if (UnsafeRelPath(rel) is { } unsafeMsg) { zip.Dispose(); return (null, unsafeMsg); }
+
+            string dest;
+            try { dest = Zip.ResolveDest(folder, rel); }
+            catch (InvalidDataException ex) { zip.Dispose(); return (null, ex.Message); }
+
+            if (seen.TryGetValue(dest, out var other))
+            {
+                zip.Dispose();
+                return (null, $"package has two files for the same path: {other} and {rel}");
+            }
+            seen[dest] = rel;
+
+            files.Add((entry, rel, dest));
+        }
+
+        return (new PreparedPackage { Zip = zip, Settings = settings, Files = files }, null);
+    }
+
     public async Task<OpResult> Install(EmulatorEntry emu, EmulatorOption opt, string folder, byte[]? prefetched = null)
     {
         var key = Key(emu.Id, opt.Id);
@@ -92,31 +151,22 @@ public sealed class EmulatorInstaller
             bytes = fetched;
         }
 
-        ZipArchive zip;
-        try { zip = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read); }
-        catch (Exception ex) { return new OpResult(false, key, $"package is not a zip: {ex.Message}"); }
-        try { return InstallFrom(zip, emu, opt, folder, key); }
-        finally { zip.Dispose(); }
+        var (package, error) = Prepare(bytes, folder);
+        if (package is null) return new OpResult(false, key, error!);
+        try { return InstallFrom(package, emu, opt, folder, key); }
+        finally { package.Dispose(); }
     }
 
-    OpResult InstallFrom(ZipArchive zip, EmulatorEntry emu, EmulatorOption opt, string folder, string key)
+    OpResult InstallFrom(PreparedPackage package, EmulatorEntry emu, EmulatorOption opt, string folder, string key)
     {
-        var (settings, problem) = ReadSettings(zip);
-        if (settings is null) return new OpResult(false, key, problem!);
-
         var written = new List<InstalledFile>();
         var backups = new List<BackupRef>();
         var applied = new List<AppliedEdit>();
         var backupDir = _paths.EmuBackupDir(emu.Id, opt.Id);
         try
         {
-            foreach (var entry in zip.Entries)
+            foreach (var (entry, rel, dest) in package.Files)
             {
-                var name = Zip.NormalizeEntryName(entry.FullName);
-                if (!name.StartsWith("files/", StringComparison.Ordinal) || name.EndsWith('/')) continue;
-                var rel = name["files/".Length..];
-                if (rel.Length == 0) continue;
-                var dest = Zip.ResolveDest(folder, rel);
                 if (File.Exists(dest))
                 {
                     var bk = Path.Combine(backupDir, rel.Replace('/', Path.DirectorySeparatorChar));
@@ -129,7 +179,7 @@ public sealed class EmulatorInstaller
                 written.Add(new InstalledFile(rel, Installer.Sha256HexFile(dest)));
             }
 
-            foreach (var edit in settings.Edits)
+            foreach (var edit in package.Settings.Edits)
             {
                 var path = Zip.ResolveDest(folder, edit.File);
                 bool created = !File.Exists(path);
@@ -158,11 +208,25 @@ public sealed class EmulatorInstaller
         var label = emu.Options.FirstOrDefault(o => o.Id == r.OptionId)?.Label ?? r.OptionId;
         var backupDir = _paths.EmuBackupDir(r.EmulatorId, r.OptionId);
 
+        // A folder on a drive that isn't connected right now is not the same as a deleted folder
+        // (portable emulators on USB sticks are common) - refuse instead of treating it as gone.
+        var driveRoot = Path.GetPathRoot(r.Folder);
+        if (!string.IsNullOrEmpty(driveRoot) && !Directory.Exists(driveRoot))
+            return new OpResult(false, key,
+                $"the drive for {r.Folder} is not connected. Reconnect it and run uninstall again.");
+
         // A folder deleted or moved since: restoring backups would recreate it, so put nothing back.
         if (!Directory.Exists(r.Folder))
         {
-            Try(true, () => { if (Directory.Exists(backupDir)) Directory.Delete(backupDir, recursive: true); });
-            _receipts.Delete(r.EmulatorId, r.OptionId);
+            try
+            {
+                Try(true, () => { if (Directory.Exists(backupDir)) Directory.Delete(backupDir, recursive: true); });
+                _receipts.Delete(r.EmulatorId, r.OptionId);
+            }
+            catch (Exception ex)
+            {
+                return new OpResult(false, key, $"uninstall stopped part-way ({ex.Message}); fix that and run it again");
+            }
             return new OpResult(true, key,
                 $"uninstalled {emu.Name} {label}; warning: the settings folder {r.Folder} no longer exists, so there was nothing to put back");
         }
@@ -172,12 +236,12 @@ public sealed class EmulatorInstaller
         {
             RevertEdits(r.Folder, r.Edits, warnings, bestEffort: false);
             RemoveFiles(r.Folder, r.Files, r.Backups, backupDir, warnings, bestEffort: false);
+            _receipts.Delete(r.EmulatorId, r.OptionId);
         }
         catch (Exception ex)
         {
             return new OpResult(false, key, $"uninstall stopped part-way ({ex.Message}); fix that and run it again");
         }
-        _receipts.Delete(r.EmulatorId, r.OptionId);
 
         var msg = $"uninstalled {emu.Name} {label}";
         var distinct = warnings.Distinct().ToList();
@@ -187,8 +251,9 @@ public sealed class EmulatorInstaller
 
     /// <summary>
     /// Update (<paramref name="onlyIfNewer"/>) or re-apply one option: the new package is verified
-    /// first, then the option is uninstalled, which puts the user's originals back, and installed
-    /// again, which records those same originals.
+    /// AND fully opened and checked (so an unreadable package never costs the user their working
+    /// install) before the option is uninstalled, which puts the user's originals back, and
+    /// installed again, which records those same originals.
     /// </summary>
     public async Task<OpResult> Refresh(EmulatorEntry emu, EmulatorOption opt, EmulatorReceipt current, bool onlyIfNewer)
     {
@@ -200,13 +265,44 @@ public sealed class EmulatorInstaller
         var (bytes, err) = await FetchAndVerify(opt);
         if (bytes is null) return new OpResult(false, key, $"kept v{current.Version}: {err}");
 
+        var (package, perr) = Prepare(bytes, current.Folder);
+        if (package is null) return new OpResult(false, key, $"kept v{current.Version}: {perr}");
+        package.Dispose();
+
+        // Anything of ours the user changed since install would otherwise be lost when Uninstall
+        // reverts it to our own recorded prior - keep it aside first (mirrors Installer.Update).
+        var kept = new List<string>();
+        foreach (var f in current.Files)
+        {
+            var p = Path.Combine(current.Folder, f.RelPath.Replace('/', Path.DirectorySeparatorChar));
+            if (!File.Exists(p)) continue;
+            if (string.Equals(Installer.Sha256HexFile(p), f.Sha256, StringComparison.OrdinalIgnoreCase)) continue;
+            var aside = p + $".bak-{current.Version}";
+            try { File.Copy(p, aside, overwrite: true); kept.Add(f.RelPath + $".bak-{current.Version}"); }
+            catch { /* best effort: never let this block the update itself */ }
+        }
+
         var un = Uninstall(emu, current);
         if (!un.Ok) return un;
         var inst = await Install(emu, opt, current.Folder, bytes);
-        if (!inst.Ok) return inst;
-        return new OpResult(true, key, onlyIfNewer
+        if (!inst.Ok)
+            return new OpResult(false, key,
+                $"removed v{current.Version}, but installing v{opt.Version} failed ({inst.Message}). Run install to try again.");
+
+        var msg = onlyIfNewer
             ? $"updated {emu.Name} {opt.Label} {current.Version} → {opt.Version}"
-            : $"re-applied {emu.Name} {opt.Label} v{opt.Version}");
+            : $"re-applied {emu.Name} {opt.Label} v{opt.Version}";
+        if (kept.Count > 0) msg += "; kept your changed file(s) as: " + string.Join(", ", kept);
+        if (UninstallWarning(un.Message) is { } w) msg += "; warning: " + w;
+        return new OpResult(true, key, msg);
+    }
+
+    /// <summary>The text after "; warning: " in an <see cref="Uninstall"/> message, or null.</summary>
+    static string? UninstallWarning(string uninstallMessage)
+    {
+        const string marker = "; warning: ";
+        var i = uninstallMessage.IndexOf(marker, StringComparison.Ordinal);
+        return i < 0 ? null : uninstallMessage[(i + marker.Length)..];
     }
 
     /// <summary>Undoes edits newest first. A missing settings file is skipped with a warning; a file
@@ -236,33 +332,60 @@ public sealed class EmulatorInstaller
         }
     }
 
-    /// <summary>Deletes the files we installed and puts back the ones they replaced.</summary>
-    static void RemoveFiles(string folder, List<InstalledFile> files, List<BackupRef> backups, string backupDir,
+    /// <summary>A receipt's relative path resolved against a root, or null when a corrupt receipt
+    /// would send it outside that root.</summary>
+    static string? SafeResolve(string root, string rel)
+    {
+        try { return Zip.ResolveDest(root, rel); }
+        catch (InvalidDataException) { return null; }
+    }
+
+    /// <summary>Deletes the files we installed and puts back the ones they replaced. The backup
+    /// folder - the only copy of a displaced original - is removed only once every restore it
+    /// attempted actually succeeded; otherwise it is left for the user to recover by hand.
+    /// Internal (rather than private) so a test can drive the restore-failure branch directly:
+    /// reaching it through a full <see cref="Install"/> rollback would need a lock injected
+    /// between a successful extraction and the later failure that triggers rollback, which a
+    /// synchronous test has no way to do.</summary>
+    internal static void RemoveFiles(string folder, List<InstalledFile> files, List<BackupRef> backups, string backupDir,
                             List<string>? warnings, bool bestEffort)
     {
         foreach (var f in files)
         {
-            var p = Path.Combine(folder, f.RelPath.Replace('/', Path.DirectorySeparatorChar));
-            if (!File.Exists(p)) continue;
+            var p = SafeResolve(folder, f.RelPath);
+            if (p is null || !File.Exists(p)) continue;
             if (warnings is not null
                 && !string.Equals(Installer.Sha256HexFile(p), f.Sha256, StringComparison.OrdinalIgnoreCase))
                 warnings.Add($"{f.RelPath} had been changed since install and was removed");
             Try(bestEffort, () => File.Delete(p));
         }
+
+        bool restoredEverything = true;
         foreach (var b in backups)
         {
-            var src = Path.Combine(backupDir, b.RelPath.Replace('/', Path.DirectorySeparatorChar));
-            var dst = Path.Combine(folder, b.RelPath.Replace('/', Path.DirectorySeparatorChar));
+            var src = SafeResolve(backupDir, b.RelPath);
+            var dst = SafeResolve(folder, b.RelPath);
+            if (src is null || dst is null) { restoredEverything = false; continue; }
             if (!File.Exists(src)) continue;
-            Try(bestEffort, () =>
+            if (!TryRestore(bestEffort, () =>
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(dst)!);
                 File.Copy(src, dst, overwrite: true);
-            });
+            })) restoredEverything = false;
         }
+
         foreach (var f in files)
-            PruneEmptyParents(folder, Path.Combine(folder, f.RelPath.Replace('/', Path.DirectorySeparatorChar)));
-        Try(true, () => { if (Directory.Exists(backupDir)) Directory.Delete(backupDir, recursive: true); });
+            if (SafeResolve(folder, f.RelPath) is { } p) PruneEmptyParents(folder, p);
+        if (restoredEverything)
+            Try(true, () => { if (Directory.Exists(backupDir)) Directory.Delete(backupDir, recursive: true); });
+    }
+
+    /// <summary>Like <see cref="Try"/> but reports whether the action actually succeeded, so a
+    /// caller can gate a later step on every attempt having gone through.</summary>
+    static bool TryRestore(bool swallow, Action a)
+    {
+        if (!swallow) { a(); return true; }
+        try { a(); return true; } catch { return false; }
     }
 
     /// <summary>Removes empty folders from the file's parent up to, never including, the settings folder.</summary>
