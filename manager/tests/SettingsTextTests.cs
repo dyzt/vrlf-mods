@@ -64,7 +64,7 @@ public class SettingsTextTests
     [Fact]
     public void Parse_detects_a_leading_BOM_character()
     {
-        var t = SettingsText.Parse("﻿[A]\r\n");
+        var t = SettingsText.Parse("\uFEFF[A]\r\n");
         Assert.True(t.Bom);
         Assert.Equal("[A]", t.Lines[0].Text);
     }

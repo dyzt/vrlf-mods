@@ -19,7 +19,7 @@ public sealed class SettingsText
 
     public static SettingsText Parse(string text)
     {
-        bool bom = text.Length > 0 && text[0] == '﻿';
+        bool bom = text.Length > 0 && text[0] == '\uFEFF';
         if (bom) text = text[1..];
         var lines = new List<SettingsLine>();
         int i = 0;
