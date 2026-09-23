@@ -86,6 +86,12 @@ def validate(e: dict, where: str) -> None:
     strings = [f, e.get("section"), e.get("key"), e.get("value")] + list(e.get("replace", []))
     if not all(_plain(s) for s in strings):
         raise BuildError(f"{where}: edits must be plain ASCII on one line")
+    key = e.get("key")
+    if key is not None and "=" in key:
+        raise BuildError(f"{where}: a key cannot contain '='")
+    section = e.get("section")
+    if section is not None and "]" in section:
+        raise BuildError(f"{where}: a section name cannot contain ']'")
 
 
 def _touches(e: dict):
@@ -168,7 +174,6 @@ def build_all(root: Path, check: bool) -> list[str]:
         built.append((emu, opt, version, data))
     for emu, options in by_emu.items():
         check_overlap(emu, options)
-    
     for emu, options in files_by_emu.items():
         check_file_overlap(emu, options)
 

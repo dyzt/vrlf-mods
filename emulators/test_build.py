@@ -72,6 +72,8 @@ class Validate(unittest.TestCase):
         {"file": "../up.ini", "format": "ini", "section": "S", "key": "k", "value": "v"},
         {"file": "a.ini", "format": "ini", "section": "S", "key": "k", "value": "caf\u00e9"},
         {"file": "a.ini", "format": "ini", "section": "S", "key": "k", "value": "a\nb"},
+        {"file": "a.ini", "format": "ini", "section": "S", "key": "k=x", "value": "v"},
+        {"file": "a.ini", "format": "ini", "section": "S]", "key": "k", "value": "v"},
     ]
 
     def test_good_edits_pass(self):
