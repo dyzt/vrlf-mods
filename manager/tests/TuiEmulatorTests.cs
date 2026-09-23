@@ -61,7 +61,6 @@ public class TuiEmulatorTests
     {
         var rows = TuiModel.EmulatorRows(Emu(folder: null));
         Assert.All(rows.Where(r => r.Action == ActionKind.EmuToggle), r => Assert.False(r.Enabled));
-        Assert.Contains(rows, r => r.Help == "Choose the settings folder first.");
     }
 
     [Fact]
@@ -70,7 +69,6 @@ public class TuiEmulatorTests
         var rows = TuiModel.EmulatorRows(Emu());
         var cal = rows.Single(r => r.ToggleKey == "calibration");
         Assert.False(cal.Enabled);
-        Assert.Equal("Install Base config first.", cal.Help);
         Assert.True(rows.Single(r => r.ToggleKey == "base").Enabled);
     }
 
@@ -84,56 +82,6 @@ public class TuiEmulatorTests
             Assert.True(r.Enabled);
             Assert.True(r.ToggleOn);
         });
-    }
-
-    // Uninstalling a base cascades to everything installed on top of it; the toggle says so first.
-    [Fact]
-    public void The_base_toggle_names_the_installed_options_it_also_removes()
-    {
-        var rows = TuiModel.EmulatorRows(Emu(locked: true, opts: new[]
-        {
-            Opt("base", "1.0"),
-            Opt("calibration", "1.0", req: "base"),
-            new EmulatorOptionStatus("crosshairs", "Crosshair removal (P1)", "Crosshairs", "1.0", "1.0", "base"),
-        }));
-
-        Assert.Equal("Enter to uninstall. Also removes Calibration pack, Crosshair removal (P1). Your settings from before go back.",
-            rows.Single(r => r.ToggleKey == "base").Help);
-        Assert.Equal("Enter to uninstall. Your settings from before go back.",
-            rows.Single(r => r.ToggleKey == "calibration").Help);
-    }
-
-    [Fact]
-    public void The_base_toggle_names_only_what_is_installed_and_follows_the_chain()
-    {
-        var notInstalled = TuiModel.EmulatorRows(Emu(locked: true,
-            opts: new[] { Opt("base", "1.0"), Opt("calibration", req: "base") }));
-        Assert.Equal("Enter to uninstall. Your settings from before go back.",
-            notInstalled.Single(r => r.ToggleKey == "base").Help);
-
-        var chain = TuiModel.EmulatorRows(Emu(locked: true, opts: new[]
-        {
-            Opt("base", "1.0"),
-            Opt("calibration", "1.0", req: "base"),
-            new EmulatorOptionStatus("extra", "Extra pack", "Extra", "1.0", "1.0", "calibration"),
-        }));
-        Assert.Equal("Enter to uninstall. Also removes Calibration pack, Extra pack. Your settings from before go back.",
-            chain.Single(r => r.ToggleKey == "base").Help);
-    }
-
-    // requires comes from mods.json unchecked: a cycle must neither hang nor name an option as
-    // removing itself.
-    [Fact]
-    public void The_toggle_help_survives_a_requires_cycle()
-    {
-        var rows = TuiModel.EmulatorRows(Emu(locked: true, opts: new[]
-        {
-            new EmulatorOptionStatus("a", "A pack", "A", "1.0", "1.0", "b"),
-            new EmulatorOptionStatus("b", "B pack", "B", "1.0", "1.0", "a"),
-        }));
-
-        Assert.Equal("Enter to uninstall. Also removes B pack. Your settings from before go back.",
-            rows.Single(r => r.ToggleKey == "a").Help);
     }
 
     [Fact]
@@ -154,22 +102,27 @@ public class TuiEmulatorTests
             r => r.Action == ActionKind.EmuClearFolder);
     }
 
+    // The screen is the folder, the options and the actions: no help lines, notes or info rows.
     [Fact]
-    public void Info_rows_name_the_driver_the_profile_and_the_notes()
+    public void The_emulator_screen_carries_no_help_or_notes()
     {
-        var texts = TuiModel.EmulatorRows(Emu(needsMet: false)).Where(r => r.Kind == RowKind.Info).Select(r => r.Text).ToList();
-        Assert.Contains("Needs ViGEmBus: not installed. Install it from the main list.", texts);
-        Assert.Contains("VRLF profile: \"Dolphin\" on the Steam Workshop", texts);
-        Assert.Contains("Calibration covers 27 USA games.", texts);
+        foreach (var e in new[] { Emu(folder: null, suggested: @"C:\D"), Emu(needsMet: false),
+                                  Emu(locked: true, opts: new[] { Opt("base", "1.0", ver: "1.1"), Opt("calibration", "1.0", req: "base") }) })
+        {
+            var rows = TuiModel.EmulatorRows(e);
+            Assert.All(rows, r => Assert.Null(r.Help));
+            Assert.DoesNotContain(rows, r => r.Kind == RowKind.Info);
+        }
+        Assert.All(TuiModel.ListRows(List(Emu())).Where(r => r.Action == ActionKind.EmuOpen), r => Assert.Null(r.Help));
     }
 
     [Theory]
     [InlineData(null, false, false, "Settings folder: not chosen")]
-    [InlineData(@"D:\E", true, true, @"Settings folder: D:\E  (installed here, uninstall to move)")]
-    [InlineData(@"D:\E", false, false, @"Settings folder: D:\E  (no longer there, Enter to fix)")]
-    [InlineData(@"D:\E", false, true, @"Settings folder: D:\E  (you chose this)")]
+    [InlineData(@"D:\E", true, true, @"Settings folder: D:\E")]
+    [InlineData(@"D:\E", false, false, @"Settings folder: D:\E  (missing)")]
+    [InlineData(@"D:\E", false, true, @"Settings folder: D:\E")]
     public void Folder_text_reads_the_state(string? folder, bool locked, bool exists, string expected)
-        => Assert.StartsWith(expected, TuiModel.EmulatorFolderText(Emu(folder: folder, locked: locked, exists: exists)));
+        => Assert.Equal(expected, TuiModel.EmulatorFolderText(Emu(folder: folder, locked: locked, exists: exists)));
 
     [Fact]
     public void Enter_on_an_emulator_opens_its_screen_on_the_folder_row()

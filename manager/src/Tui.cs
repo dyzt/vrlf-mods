@@ -155,9 +155,7 @@ public static class Tui
     {
         var st = list.Emulators?.FirstOrDefault(e => e.Id == emuId);
         if (st is { Locked: true }) return $"Installed in {st.Folder}. Uninstall to move.";
-        Console.WriteLine("\n  Type or paste the settings folder or the program folder, then Enter. Blank cancels.");
-        Console.WriteLine("  (In Explorer: Shift+Right-click the folder, \"Copy as path\".)");
-        Console.Write("\n  > ");
+        Console.Write("\n  Settings folder: ");
         var typed = Console.ReadLine();
         if (string.IsNullOrWhiteSpace(typed)) return "cancelled";
         var r = await mm.Emulators.SetFolder(emuId, typed);

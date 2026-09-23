@@ -77,8 +77,7 @@ public static class TuiModel
             {
                 var (glyph, text) = EmulatorState(e);
                 rows.Add(new MenuRow(RowKind.Action, $"{e.Name.PadRight(width)}   {glyph} {text}",
-                    ActionKind.EmuOpen, ModId: e.Id,
-                    Help: "Installs VRLF's lightgun setup into this emulator. Uninstall puts your settings back."));
+                    ActionKind.EmuOpen, ModId: e.Id));
             }
         }
 
@@ -100,25 +99,21 @@ public static class TuiModel
 
     public static string EmulatorFolderText(EmulatorStatus e)
     {
-        if (e.Folder is null) return "Settings folder: not chosen. Enter to choose it";
-        if (e.Locked) return $"Settings folder: {e.Folder}  (installed here, uninstall to move)";
-        if (!e.FolderExists) return $"Settings folder: {e.Folder}  (no longer there, Enter to fix)";
-        return $"Settings folder: {e.Folder}  (you chose this)";
+        if (e.Folder is null) return "Settings folder: not chosen";
+        if (!e.FolderExists) return $"Settings folder: {e.Folder}  (missing)";
+        return $"Settings folder: {e.Folder}";
     }
 
-    /// <summary>The emulator screen: folder first, then one row per option, then the extras.</summary>
+    /// <summary>The emulator screen: folder first, then one row per option, then the actions.
+    /// No help or notes: the rows are the whole screen.</summary>
     public static List<MenuRow> EmulatorRows(EmulatorStatus e)
     {
         var rows = new List<MenuRow>
         {
-            new(RowKind.Action, EmulatorFolderText(e), ActionKind.EmuSetFolder, ModId: e.Id,
-                Help: e.Locked
-                    ? "Uninstall everything here to move it."
-                    : "Type or paste the settings folder or the program folder. A portable copy keeps your lightgun setup separate."),
+            new(RowKind.Action, EmulatorFolderText(e), ActionKind.EmuSetFolder, ModId: e.Id),
         };
         if (e.Folder is null && e.Suggested is not null)
-            rows.Add(new(RowKind.Action, $"Use your main install: {e.Suggested}", ActionKind.EmuUseSuggested, ModId: e.Id,
-                Help: $"Installs into the {e.Name} you use for everything else. Uninstall puts your settings back."));
+            rows.Add(new(RowKind.Action, $"Use your main install: {e.Suggested}", ActionKind.EmuUseSuggested, ModId: e.Id));
         rows.Add(new(RowKind.Separator, "", Selectable: false));
 
         foreach (var o in e.Options)
@@ -127,17 +122,8 @@ public static class TuiModel
             var required = o.Requires is null ? null : e.Options.FirstOrDefault(x => x.Id == o.Requires);
             bool reqMet = o.Requires is null || required?.InstalledVersion is not null;
             bool enabled = installed || (e.FolderChosen && e.FolderExists && reqMet);
-            var alsoRemoves = installed ? InstalledDependants(e, o) : new();
-            string help = installed
-                    ? alsoRemoves.Count > 0
-                        ? $"Enter to uninstall. Also removes {string.Join(", ", alsoRemoves.Select(x => x.Label))}. Your settings from before go back."
-                        : "Enter to uninstall. Your settings from before go back."
-                : !e.FolderChosen ? "Choose the settings folder first."
-                : !e.FolderExists ? "The settings folder is no longer there."
-                : !reqMet ? $"Install {required?.Label ?? o.Requires} first."
-                : "Enter to install.";
             rows.Add(new(RowKind.Toggle, $"{o.Label,-28} v{o.InstalledVersion ?? o.Version}", ActionKind.EmuToggle,
-                ModId: e.Id, ToggleKey: o.Id, ToggleOn: installed, Enabled: enabled, Help: help));
+                ModId: e.Id, ToggleKey: o.Id, ToggleOn: installed, Enabled: enabled));
         }
 
         var pending = e.Options.Where(o => o.InstalledVersion is not null && o.InstalledVersion != o.Version).ToList();
@@ -145,38 +131,10 @@ public static class TuiModel
             rows.Add(new(RowKind.Action, "Update → " + string.Join(", ", pending.Select(o => $"{o.Label} v{o.Version}")),
                 ActionKind.EmuUpdate, ModId: e.Id));
         if (e.Options.Any(o => o.InstalledVersion is not null))
-            rows.Add(new(RowKind.Action, "Re-apply installed options", ActionKind.EmuReapply, ModId: e.Id,
-                Help: $"Puts our settings back if they were changed in {e.Name}'s own menus."));
+            rows.Add(new(RowKind.Action, "Re-apply installed options", ActionKind.EmuReapply, ModId: e.Id));
         if (e.Folder is not null && !e.Locked)
             rows.Add(new(RowKind.Action, "Forget this folder", ActionKind.EmuClearFolder, ModId: e.Id));
-
-        rows.Add(new(RowKind.Separator, "", Selectable: false));
-        if (e.Needs == "vigembus")
-            rows.Add(new(RowKind.Info, e.NeedsMet
-                ? "Needs ViGEmBus: installed."
-                : "Needs ViGEmBus: not installed. Install it from the main list.", Selectable: false));
-        if (e.Profile is not null) rows.Add(new(RowKind.Info, $"VRLF profile: {e.Profile}", Selectable: false));
-        if (e.Notes is not null) rows.Add(new(RowKind.Info, e.Notes, Selectable: false));
         return rows;
-    }
-
-    /// <summary>Installed options that need <paramref name="o"/>, directly or through another:
-    /// what uninstalling it also removes. Bounded like the service's own walk, because
-    /// <c>requires</c> comes from mods.json unchecked and could form a cycle.</summary>
-    static List<EmulatorOptionStatus> InstalledDependants(EmulatorStatus e, EmulatorOptionStatus o) =>
-        e.Options.Where(x => x.InstalledVersion is not null && x.Id != o.Id && Needs(e, x, o.Id)).ToList();
-
-    static bool Needs(EmulatorStatus e, EmulatorOptionStatus x, string target)
-    {
-        var cur = x;
-        for (int steps = 0; cur.Requires is { } req && steps < e.Options.Count; steps++)
-        {
-            if (string.Equals(req, target, StringComparison.OrdinalIgnoreCase)) return true;
-            var next = e.Options.FirstOrDefault(y => string.Equals(y.Id, req, StringComparison.OrdinalIgnoreCase));
-            if (next is null) return false;
-            cur = next;
-        }
-        return false;
     }
 
     public static string VirtualGunStatus(ListReport r)
