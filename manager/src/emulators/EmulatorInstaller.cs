@@ -151,6 +151,64 @@ public sealed class EmulatorInstaller
         return new OpResult(true, key, $"installed {emu.Name} {opt.Label} v{opt.Version}");
     }
 
+    public OpResult Uninstall(EmulatorEntry emu, EmulatorReceipt r)
+    {
+        var key = Key(r.EmulatorId, r.OptionId);
+        if (RunningProcess(emu) is { } running) return new OpResult(false, key, CloseFirst(emu, running));
+        var label = emu.Options.FirstOrDefault(o => o.Id == r.OptionId)?.Label ?? r.OptionId;
+        var backupDir = _paths.EmuBackupDir(r.EmulatorId, r.OptionId);
+
+        // A folder deleted or moved since: restoring backups would recreate it, so put nothing back.
+        if (!Directory.Exists(r.Folder))
+        {
+            Try(true, () => { if (Directory.Exists(backupDir)) Directory.Delete(backupDir, recursive: true); });
+            _receipts.Delete(r.EmulatorId, r.OptionId);
+            return new OpResult(true, key,
+                $"uninstalled {emu.Name} {label}; warning: the settings folder {r.Folder} no longer exists, so there was nothing to put back");
+        }
+
+        var warnings = new List<string>();
+        try
+        {
+            RevertEdits(r.Folder, r.Edits, warnings, bestEffort: false);
+            RemoveFiles(r.Folder, r.Files, r.Backups, backupDir, warnings, bestEffort: false);
+        }
+        catch (Exception ex)
+        {
+            return new OpResult(false, key, $"uninstall stopped part-way ({ex.Message}); fix that and run it again");
+        }
+        _receipts.Delete(r.EmulatorId, r.OptionId);
+
+        var msg = $"uninstalled {emu.Name} {label}";
+        var distinct = warnings.Distinct().ToList();
+        if (distinct.Count > 0) msg += "; warning: " + string.Join("; ", distinct);
+        return new OpResult(true, key, msg);
+    }
+
+    /// <summary>
+    /// Update (<paramref name="onlyIfNewer"/>) or re-apply one option: the new package is verified
+    /// first, then the option is uninstalled, which puts the user's originals back, and installed
+    /// again, which records those same originals.
+    /// </summary>
+    public async Task<OpResult> Refresh(EmulatorEntry emu, EmulatorOption opt, EmulatorReceipt current, bool onlyIfNewer)
+    {
+        var key = Key(emu.Id, opt.Id);
+        if (onlyIfNewer && string.Equals(opt.Version, current.Version, StringComparison.OrdinalIgnoreCase))
+            return new OpResult(true, key, $"{opt.Label} is up to date (v{opt.Version})");
+        if (RunningProcess(emu) is { } running) return new OpResult(false, key, CloseFirst(emu, running));
+
+        var (bytes, err) = await FetchAndVerify(opt);
+        if (bytes is null) return new OpResult(false, key, $"kept v{current.Version}: {err}");
+
+        var un = Uninstall(emu, current);
+        if (!un.Ok) return un;
+        var inst = await Install(emu, opt, current.Folder, bytes);
+        if (!inst.Ok) return inst;
+        return new OpResult(true, key, onlyIfNewer
+            ? $"updated {emu.Name} {opt.Label} {current.Version} → {opt.Version}"
+            : $"re-applied {emu.Name} {opt.Label} v{opt.Version}");
+    }
+
     /// <summary>Undoes edits newest first. A missing settings file is skipped with a warning; a file
     /// we created is deleted once nothing but blanks and comments is left.</summary>
     static void RevertEdits(string folder, List<AppliedEdit> applied, List<string>? warnings, bool bestEffort)
