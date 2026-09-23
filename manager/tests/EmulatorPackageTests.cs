@@ -66,6 +66,27 @@ public class EmulatorPackageTests
         Assert.Equal(4, embedded.EmulatorList.Count);
     }
 
+    // Dolphin uses Documents\Dolphin Emulator whenever that folder exists, so with both present
+    // that is the one it reads and the one to suggest.
+    [Fact]
+    public void Dolphin_suggests_the_Documents_folder_before_AppData()
+    {
+        var dolphin = Registry().FindEmulator("dolphin")!;
+        var appdata = EmuFixture.TempFolder("AppData");
+        var docs = EmuFixture.TempFolder("Documents");
+        foreach (var root in new[] { appdata, docs })
+            EmuFixture.Write(Path.Combine(root, "Dolphin Emulator"), "Config/Dolphin.ini", "[General]\r\n");
+        var folders = new EmulatorFolders(new GamePathStore(EmuFixture.TempPaths()),
+            new FakeKnownFolders(new() { ["APPDATA"] = appdata, ["DOCUMENTS"] = docs }));
+
+        Assert.Equal(Path.Combine(docs, "Dolphin Emulator"), folders.Suggest(dolphin));
+    }
+
+    // MAME reads only the first mame.ini on its inipath, and the setup edits the one beside mame.exe.
+    [Fact]
+    public void Mame_notes_say_where_mame_ini_must_live()
+        => Assert.EndsWith(" Keep mame.ini next to mame.exe, not in ini/.", Registry().FindEmulator("mame")!.Notes);
+
     [Theory]
     [InlineData("dolphin")]
     [InlineData("pcsx2")]

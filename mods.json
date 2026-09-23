@@ -128,7 +128,7 @@
   ],
   "emulators": [
     { "id": "dolphin", "name": "Dolphin", "processes": ["Dolphin"], "exe": ["Dolphin.exe"],
-      "locate": ["%APPDATA%/Dolphin Emulator", "%DOCUMENTS%/Dolphin Emulator"], "marker": ["Config/Dolphin.ini"],
+      "locate": ["%DOCUMENTS%/Dolphin Emulator", "%APPDATA%/Dolphin Emulator"], "marker": ["Config/Dolphin.ini"],
       "portable": { "flag": ["portable.txt"], "settings": "User" },
       "needs": "vigembus", "profile": "\"Dolphin\" on the Steam Workshop",
       "notes": "Calibration covers 27 USA games. Crosshair removal hides player 1's crosshair only.",
@@ -158,7 +158,7 @@
     { "id": "mame", "name": "MAME", "processes": ["mame"], "exe": ["mame*.exe"],
       "locate": [], "marker": ["mame.ini", "mame*.exe"],
       "needs": "vigembus", "profile": "\"MAME - 2P Arcade\" on the Steam Workshop",
-      "notes": "Select the VRLF profile before starting MAME. Gun remaps in cfg/default.cfg override this setup.",
+      "notes": "Select the VRLF profile before starting MAME. Gun remaps in cfg/default.cfg override this setup. Keep mame.ini next to mame.exe, not in ini/.",
       "options": [
         { "id": "base", "label": "Base config", "short": "Base", "version": "1.0",
           "zip": "emulators/mame/dist/mame-base-v1.0.zip", "sha256": "f84dc41bf961f0905e1216a70dc9aafe5760b5ce2c7ff6f111832c0729a6f002" } ] }

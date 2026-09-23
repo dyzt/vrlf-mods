@@ -86,6 +86,56 @@ public class TuiEmulatorTests
         });
     }
 
+    // Uninstalling a base cascades to everything installed on top of it; the toggle says so first.
+    [Fact]
+    public void The_base_toggle_names_the_installed_options_it_also_removes()
+    {
+        var rows = TuiModel.EmulatorRows(Emu(locked: true, opts: new[]
+        {
+            Opt("base", "1.0"),
+            Opt("calibration", "1.0", req: "base"),
+            new EmulatorOptionStatus("crosshairs", "Crosshair removal (P1)", "Crosshairs", "1.0", "1.0", "base"),
+        }));
+
+        Assert.Equal("Enter to uninstall. Also removes Calibration pack, Crosshair removal (P1). Your settings from before go back.",
+            rows.Single(r => r.ToggleKey == "base").Help);
+        Assert.Equal("Enter to uninstall. Your settings from before go back.",
+            rows.Single(r => r.ToggleKey == "calibration").Help);
+    }
+
+    [Fact]
+    public void The_base_toggle_names_only_what_is_installed_and_follows_the_chain()
+    {
+        var notInstalled = TuiModel.EmulatorRows(Emu(locked: true,
+            opts: new[] { Opt("base", "1.0"), Opt("calibration", req: "base") }));
+        Assert.Equal("Enter to uninstall. Your settings from before go back.",
+            notInstalled.Single(r => r.ToggleKey == "base").Help);
+
+        var chain = TuiModel.EmulatorRows(Emu(locked: true, opts: new[]
+        {
+            Opt("base", "1.0"),
+            Opt("calibration", "1.0", req: "base"),
+            new EmulatorOptionStatus("extra", "Extra pack", "Extra", "1.0", "1.0", "calibration"),
+        }));
+        Assert.Equal("Enter to uninstall. Also removes Calibration pack, Extra pack. Your settings from before go back.",
+            chain.Single(r => r.ToggleKey == "base").Help);
+    }
+
+    // requires comes from mods.json unchecked: a cycle must neither hang nor name an option as
+    // removing itself.
+    [Fact]
+    public void The_toggle_help_survives_a_requires_cycle()
+    {
+        var rows = TuiModel.EmulatorRows(Emu(locked: true, opts: new[]
+        {
+            new EmulatorOptionStatus("a", "A pack", "A", "1.0", "1.0", "b"),
+            new EmulatorOptionStatus("b", "B pack", "B", "1.0", "1.0", "a"),
+        }));
+
+        Assert.Equal("Enter to uninstall. Also removes B pack. Your settings from before go back.",
+            rows.Single(r => r.ToggleKey == "a").Help);
+    }
+
     [Fact]
     public void Update_and_reapply_rows_appear_only_when_they_mean_something()
     {

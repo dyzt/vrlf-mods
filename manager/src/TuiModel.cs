@@ -127,7 +127,11 @@ public static class TuiModel
             var required = o.Requires is null ? null : e.Options.FirstOrDefault(x => x.Id == o.Requires);
             bool reqMet = o.Requires is null || required?.InstalledVersion is not null;
             bool enabled = installed || (e.FolderChosen && e.FolderExists && reqMet);
-            string help = installed ? "Enter to uninstall. Your settings from before go back."
+            var alsoRemoves = installed ? InstalledDependants(e, o) : new();
+            string help = installed
+                    ? alsoRemoves.Count > 0
+                        ? $"Enter to uninstall. Also removes {string.Join(", ", alsoRemoves.Select(x => x.Label))}. Your settings from before go back."
+                        : "Enter to uninstall. Your settings from before go back."
                 : !e.FolderChosen ? "Choose the settings folder first."
                 : !e.FolderExists ? "The settings folder is no longer there."
                 : !reqMet ? $"Install {required?.Label ?? o.Requires} first."
@@ -154,6 +158,25 @@ public static class TuiModel
         if (e.Profile is not null) rows.Add(new(RowKind.Info, $"VRLF profile: {e.Profile}", Selectable: false));
         if (e.Notes is not null) rows.Add(new(RowKind.Info, e.Notes, Selectable: false));
         return rows;
+    }
+
+    /// <summary>Installed options that need <paramref name="o"/>, directly or through another:
+    /// what uninstalling it also removes. Bounded like the service's own walk, because
+    /// <c>requires</c> comes from mods.json unchecked and could form a cycle.</summary>
+    static List<EmulatorOptionStatus> InstalledDependants(EmulatorStatus e, EmulatorOptionStatus o) =>
+        e.Options.Where(x => x.InstalledVersion is not null && x.Id != o.Id && Needs(e, x, o.Id)).ToList();
+
+    static bool Needs(EmulatorStatus e, EmulatorOptionStatus x, string target)
+    {
+        var cur = x;
+        for (int steps = 0; cur.Requires is { } req && steps < e.Options.Count; steps++)
+        {
+            if (string.Equals(req, target, StringComparison.OrdinalIgnoreCase)) return true;
+            var next = e.Options.FirstOrDefault(y => string.Equals(y.Id, req, StringComparison.OrdinalIgnoreCase));
+            if (next is null) return false;
+            cur = next;
+        }
+        return false;
     }
 
     public static string VirtualGunStatus(ListReport r)
