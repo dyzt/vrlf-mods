@@ -36,18 +36,18 @@ This repository is the single public home for:
 ## Emulators
 
 `vrlf-mods emulator …` (and the **EMULATORS** section of the menu) installs VRLF's lightgun setup into
-Dolphin, PCSX2, PCSX2x6, DuckStation, MAME, Flycast or RPCS3, and uninstall puts every setting it changed back. Choose the
+Dolphin, DuckStation, PCSX2, PCSX2x6, RPCS3, Flycast or MAME, and uninstall puts every setting it changed back. Choose the
 settings folder first; a portable copy keeps the lightgun setup apart from your main emulator.
 
 | id | Options |
 |---|---|
 | `dolphin` | `base`, then `calibration` and `crosshairs` (player 1) |
-| `pcsx2` | `base` |
 | `duckstation` | `base` |
-| `mame` | `base` |
-| `flycast` | `base` (two guns through the Virtual Lightgun; the mappings match English Windows) |
-| `rpcs3` | `base` (PS Move games: gun 1 is Player 7, gun 2 is Player 6) |
+| `pcsx2` | `base` |
 | `pcsx2x6` | `base` (Namco System 246/256; settings in `Documents\PCSX2x6`, apart from PCSX2's) |
+| `rpcs3` | `base` (PS Move games: gun 1 is Player 7, gun 2 is Player 6) |
+| `flycast` | `base` (two guns through the Virtual Lightgun; the mappings match English Windows) |
+| `mame` | `base` |
 
 Commands: `emulator list | status <id> | path <id> [<dir>|--clear] | install <id> [<option>] |
 uninstall <id> [<option>] | update <id> | reapply <id>`. Packages are built from `emulators/` by
