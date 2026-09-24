@@ -1,0 +1,15 @@
+{
+  "version": "1.0",
+  "edits": [
+    { "file": "inis/PCSX2.ini", "format": "ini", "section": "InputSources", "key": "XInput", "value": "true" },
+    { "file": "inis/PCSX2.ini", "format": "ini", "section": "Pad", "key": "PointerXScale", "value": "8" },
+    { "file": "inis/PCSX2.ini", "format": "ini", "section": "Pad", "key": "PointerYScale", "value": "8" },
+    { "file": "inis/PCSX2.ini", "format": "ini", "section": "USB1", "replaceFrom": "inputprofiles/VRLF GunCon2 2P (XInput).ini#USB1" },
+    { "file": "inis/PCSX2.ini", "format": "ini", "section": "USB2", "replaceFrom": "inputprofiles/VRLF GunCon2 2P (XInput).ini#USB2" },
+    { "file": "inis/PCSX2.ini", "format": "ini", "section": "JVS", "key": "ToggleTestMode", "value": "Keyboard/1" },
+    { "file": "inis/PCSX2.ini", "format": "ini", "section": "JVS", "key": "P1_Service", "value": "Keyboard/2" },
+    { "file": "inis/PCSX2.ini", "format": "ini", "section": "JVS", "key": "P1_Button1", "value": "Keyboard/3" },
+    { "file": "inis/PCSX2.ini", "format": "ini", "section": "JVS", "key": "P1_Up", "value": "Keyboard/4" },
+    { "file": "inis/PCSX2.ini", "format": "ini", "section": "JVS", "key": "P1_Down", "value": "Keyboard/5" }
+  ]
+}

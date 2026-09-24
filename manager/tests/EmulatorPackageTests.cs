@@ -60,13 +60,17 @@ public class EmulatorPackageTests
             ["config/input_configs/global/Default.yml"] = "Player 1 Input:\n  Handler: XInput\n",
             ["rpcs3.exe"] = "MZ",
         },
+        ["pcsx2x6"] = new()
+        {
+            ["inis/PCSX2.ini"] = "[UI]\r\nSettingsVersion = 1\r\n\r\n[InputSources]\r\nKeyboard = true\r\nSDL = true\r\n\r\n[Pad]\r\nMultitapPort1 = false\r\n\r\n[Pad1]\r\nType = DualShock2\r\n\r\n[USB1]\r\nType = None\r\n\r\n[USB2]\r\nType = None\r\n\r\n[JVS]\r\nTestMode = false\r\nVideoVoltage = true\r\n",
+        },
     };
 
     [Fact]
     public void Every_emulator_zip_is_committed_and_matches_its_sha256()
     {
         var reg = Registry();
-        Assert.Equal(new[] { "dolphin", "pcsx2", "duckstation", "mame", "flycast", "rpcs3" }, reg.EmulatorList.Select(e => e.Id));
+        Assert.Equal(new[] { "dolphin", "pcsx2", "duckstation", "mame", "flycast", "rpcs3", "pcsx2x6" }, reg.EmulatorList.Select(e => e.Id));
         foreach (var o in reg.EmulatorList.SelectMany(e => e.Options))
             Assert.Equal(o.Sha256, Installer.Sha256Hex(Zip(o)));
     }
@@ -76,7 +80,7 @@ public class EmulatorPackageTests
     {
         using var s = typeof(ModRegistry).Assembly.GetManifestResourceStream("mods.json")!;
         var embedded = JsonSerializer.Deserialize(s, VrlfJson.Default.ModRegistry)!;
-        Assert.Equal(6, embedded.EmulatorList.Count);
+        Assert.Equal(7, embedded.EmulatorList.Count);
     }
 
     // Dolphin uses Documents\Dolphin Emulator whenever that folder exists, so with both present
@@ -107,6 +111,7 @@ public class EmulatorPackageTests
     [InlineData("mame")]
     [InlineData("flycast")]
     [InlineData("rpcs3")]
+    [InlineData("pcsx2x6")]
     public async Task Installs_every_option_then_uninstalls_to_the_original_bytes(string id)
     {
         var emu = Registry().FindEmulator(id)!;
@@ -209,6 +214,22 @@ public class EmulatorPackageTests
                 var input = EmuFixture.Read(folder, "config/input_configs/global/VRLF Move 2P.yml");
                 Assert.Contains("Player 7 Input:", input);
                 Assert.Contains("Left Pad Squircling Factor: 0", input);
+                break;
+            case "pcsx2x6":
+                var x6 = S(folder, "inis/PCSX2.ini");
+                Assert.Equal("true", IniEditor.Get(x6, "InputSources", "XInput"));
+                Assert.Equal("true", IniEditor.Get(x6, "InputSources", "SDL"));
+                Assert.Equal("8", IniEditor.Get(x6, "Pad", "PointerXScale"));
+                Assert.Equal("guncon2", IniEditor.Get(x6, "USB1", "Type"));
+                Assert.Equal("XInput-0", IniEditor.Get(x6, "USB1", "guncon2_Pointer"));   // the aim source
+                Assert.Equal("XInput-1", IniEditor.Get(x6, "USB2", "guncon2_Pointer"));
+                Assert.Equal("XInput-0/Back", IniEditor.Get(x6, "USB1", "guncon2_Select"));   // coin
+                Assert.Equal("Keyboard/1", IniEditor.Get(x6, "JVS", "ToggleTestMode"));
+                Assert.Equal("Keyboard/5", IniEditor.Get(x6, "JVS", "P1_Down"));
+                Assert.Equal("false", IniEditor.Get(x6, "JVS", "TestMode"));
+                Assert.Null(IniEditor.Get(x6, "JVS", "SindenBorderThickness"));
+                Assert.Equal("DualShock2", IniEditor.Get(x6, "Pad1", "Type"));
+                Assert.Contains("guncon2_Pointer = XInput-1", EmuFixture.Read(folder, "inputprofiles/VRLF GunCon2 2P (XInput).ini"));
                 break;
         }
     }

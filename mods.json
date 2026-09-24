@@ -175,6 +175,14 @@
       "notes": "PS Move games, two guns: gun 1 is RPCS3's Player 7, gun 2 is Player 6, and Player 1 is the keyboard for menus. The VRLF input config is RPCS3's global one while installed; uninstall gives your pads back.",
       "options": [
         { "id": "base", "label": "Base config", "short": "Base", "version": "1.0",
-          "zip": "emulators/rpcs3/dist/rpcs3-base-v1.0.zip", "sha256": "89b64e9bb974d3872c5043f72996e53afacee049652d3028becba549cb2c02c8" } ] }
+          "zip": "emulators/rpcs3/dist/rpcs3-base-v1.0.zip", "sha256": "89b64e9bb974d3872c5043f72996e53afacee049652d3028becba549cb2c02c8" } ] },
+    { "id": "pcsx2x6", "name": "PCSX2x6", "processes": ["pcsx2"], "exe": ["pcsx2*.exe"],
+      "locate": ["%DOCUMENTS%/PCSX2x6"], "marker": ["inis/PCSX2.ini"],
+      "portable": { "flag": ["portable.ini", "portable.txt"], "settings": "" },
+      "needs": "vigembus", "profile": "\"PCSX2x6\" on the Steam Workshop",
+      "notes": "Namco System 246/256 gun games. Both GunCon2s plug into the USB ports; keys 1 to 5 are Test, Service, Enter, Up and Down. Calibrate each game in its service menu on first run.",
+      "options": [
+        { "id": "base", "label": "Base config", "short": "Base", "version": "1.0",
+          "zip": "emulators/pcsx2x6/dist/pcsx2x6-base-v1.0.zip", "sha256": "9793acc62643fb6f52b5bfaaf69c5f80791071680072f175578b64ab79a2e7e4" } ] }
   ]
 }
