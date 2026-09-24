@@ -70,7 +70,7 @@ public class EmulatorPackageTests
     public void Every_emulator_zip_is_committed_and_matches_its_sha256()
     {
         var reg = Registry();
-        Assert.Equal(new[] { "dolphin", "pcsx2", "duckstation", "mame", "flycast", "rpcs3", "pcsx2x6" }, reg.EmulatorList.Select(e => e.Id));
+        Assert.Equal(new[] { "dolphin", "duckstation", "pcsx2", "pcsx2x6", "rpcs3", "flycast", "mame" }, reg.EmulatorList.Select(e => e.Id));
         foreach (var o in reg.EmulatorList.SelectMany(e => e.Options))
             Assert.Equal(o.Sha256, Installer.Sha256Hex(Zip(o)));
     }
