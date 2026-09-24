@@ -59,6 +59,7 @@ class Validate(unittest.TestCase):
         {"file": "a.ini", "format": "ini", "section": "S", "key": "k", "value": "v"},
         {"file": "a.ini", "format": "ini", "section": "S", "replace": ["k = v"]},
         {"file": "mame.ini", "format": "mame", "key": "ctrlr", "value": "vrlf"},
+        {"file": "config/config.yml", "format": "yaml", "section": "Input/Output", "key": "Camera type", "value": "PS Eye"},
     ]
     BAD = [
         {"file": "a.ini", "format": "toml", "section": "S", "key": "k", "value": "v"},
@@ -74,6 +75,10 @@ class Validate(unittest.TestCase):
         {"file": "a.ini", "format": "ini", "section": "S", "key": "k", "value": "a\nb"},
         {"file": "a.ini", "format": "ini", "section": "S", "key": "k=x", "value": "v"},
         {"file": "a.ini", "format": "ini", "section": "S]", "key": "k", "value": "v"},
+        {"file": "a.yml", "format": "yaml", "key": "k", "value": "v"},
+        {"file": "a.yml", "format": "yaml", "section": "S", "replace": ["k: v"]},
+        {"file": "a.yml", "format": "yaml", "section": "S", "key": "a: b", "value": "v"},
+        {"file": "a.yml", "format": "yaml", "section": "S: T", "key": "k", "value": "v"},
     ]
 
     def test_good_edits_pass(self):

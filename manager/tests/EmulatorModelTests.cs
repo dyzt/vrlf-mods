@@ -59,6 +59,11 @@ public class EmulatorModelTests
     [InlineData("ini", "S", "k", "a\r\nb", false, "plain ASCII")]
     [InlineData("ini", "S", "a=b", "v", false, "'='")]
     [InlineData("ini", "S]", "k", "v", false, "']'")]
+    [InlineData("yaml", "Input/Output", "Camera type", "PS Eye", false, null)]
+    [InlineData("yaml", null, "k", "v", false, "need a section")]
+    [InlineData("yaml", "S", null, null, true, "no replace")]
+    [InlineData("yaml", "S", "a: b", "v", false, "':'")]
+    [InlineData("yaml", "S: T", "k", "v", false, "':'")]
     public void EditSpec_Problem_names_what_is_wrong(string format, string? section, string? key, string? value,
                                                     bool replace, string? problem)
     {

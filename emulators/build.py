@@ -67,8 +67,8 @@ def _plain(s) -> bool:
 
 def validate(e: dict, where: str) -> None:
     fmt = e.get("format")
-    if fmt not in ("ini", "mame"):
-        raise BuildError(f"{where}: format must be ini or mame")
+    if fmt not in ("ini", "mame", "yaml"):
+        raise BuildError(f"{where}: format must be ini, mame or yaml")
     f = e.get("file") or ""
     parts = PurePosixPath(f.replace("\\", "/")).parts
     if not f or f.startswith(("/", "\\")) or ":" in f or ".." in parts:
@@ -81,8 +81,12 @@ def validate(e: dict, where: str) -> None:
         raise BuildError(f"{where}: a set edit needs both key and value")
     if fmt == "mame" and (e.get("section") is not None or is_replace):
         raise BuildError(f"{where}: mame edits have no section and no replace")
-    if fmt == "ini" and not e.get("section"):
-        raise BuildError(f"{where}: ini edits need a section")
+    if fmt in ("ini", "yaml") and not e.get("section"):
+        raise BuildError(f"{where}: {fmt} edits need a section")
+    if fmt == "yaml" and is_replace:
+        raise BuildError(f"{where}: yaml edits have no replace")
+    if fmt == "yaml" and (":" in e["section"] or ":" in (e.get("key") or "")):
+        raise BuildError(f"{where}: a yaml section or key cannot contain ':'")
     strings = [f, e.get("section"), e.get("key"), e.get("value")] + list(e.get("replace", []))
     if not all(_plain(s) for s in strings):
         raise BuildError(f"{where}: edits must be plain ASCII on one line")

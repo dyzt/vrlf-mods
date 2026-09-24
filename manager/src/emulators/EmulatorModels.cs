@@ -44,6 +44,12 @@ public record EditSpec(
             case "mame":
                 if (Section is not null || isReplace) return $"{File}: mame edits have no section and no replace";
                 break;
+            case "yaml":
+                if (string.IsNullOrEmpty(Section)) return $"{File}: yaml edits need a section";
+                if (isReplace) return $"{File}: yaml edits have no replace";
+                if (Section.Contains(':') || (Key?.Contains(':') ?? false))
+                    return $"{File}: a yaml section or key cannot contain ':'";
+                break;
             default:
                 return $"{File}: unknown format '{Format}'";
         }

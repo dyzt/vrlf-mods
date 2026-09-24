@@ -168,6 +168,13 @@
       "notes": "Select the VRLF profile before starting Flycast. With Raw Input on, Flycast only hears a real keyboard. The gun mappings match English Windows; elsewhere, map the guns in Flycast's Controls.",
       "options": [
         { "id": "base", "label": "Base config", "short": "Base", "version": "1.0",
-          "zip": "emulators/flycast/dist/flycast-base-v1.0.zip", "sha256": "3163a1be958decd20e34732733984ae2fe6cdf4898c375e3c30a470d33f2efab" } ] }
+          "zip": "emulators/flycast/dist/flycast-base-v1.0.zip", "sha256": "3163a1be958decd20e34732733984ae2fe6cdf4898c375e3c30a470d33f2efab" } ] },
+    { "id": "rpcs3", "name": "RPCS3", "processes": ["rpcs3"], "exe": ["rpcs3.exe"],
+      "locate": [], "marker": ["config/config.yml", "rpcs3.exe"],
+      "needs": "vigembus", "profile": "\"RPCS3\" on the Steam Workshop",
+      "notes": "PS Move games, two guns: gun 1 is RPCS3's Player 7, gun 2 is Player 6, and Player 1 is the keyboard for menus. The VRLF input config is RPCS3's global one while installed; uninstall gives your pads back.",
+      "options": [
+        { "id": "base", "label": "Base config", "short": "Base", "version": "1.0",
+          "zip": "emulators/rpcs3/dist/rpcs3-base-v1.0.zip", "sha256": "89b64e9bb974d3872c5043f72996e53afacee049652d3028becba549cb2c02c8" } ] }
   ]
 }

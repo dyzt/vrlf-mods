@@ -53,13 +53,20 @@ public class EmulatorPackageTests
             ["flycast.exe"] = "MZ",
             ["mappings/SDL_Default Mouse.cfg"] = "[digital]\nbind0 = 1:btn_b\n",
         },
+        ["rpcs3"] = new()
+        {
+            ["config/config.yml"] = "Core:\n  PPU Decoder: Recompiler (LLVM)\nInput/Output:\n  Camera: \"Null\"\n  Camera type: Unknown\n  Keyboard: \"Null\"\n  Move: \"Null\"\n  Mouse: Basic\nLog:\n  Level: Warning\n",
+            ["config/input_configs/active_input_configurations.yml"] = "Active Configurations:\n  global: Default\n",
+            ["config/input_configs/global/Default.yml"] = "Player 1 Input:\n  Handler: XInput\n",
+            ["rpcs3.exe"] = "MZ",
+        },
     };
 
     [Fact]
     public void Every_emulator_zip_is_committed_and_matches_its_sha256()
     {
         var reg = Registry();
-        Assert.Equal(new[] { "dolphin", "pcsx2", "duckstation", "mame", "flycast" }, reg.EmulatorList.Select(e => e.Id));
+        Assert.Equal(new[] { "dolphin", "pcsx2", "duckstation", "mame", "flycast", "rpcs3" }, reg.EmulatorList.Select(e => e.Id));
         foreach (var o in reg.EmulatorList.SelectMany(e => e.Options))
             Assert.Equal(o.Sha256, Installer.Sha256Hex(Zip(o)));
     }
@@ -69,7 +76,7 @@ public class EmulatorPackageTests
     {
         using var s = typeof(ModRegistry).Assembly.GetManifestResourceStream("mods.json")!;
         var embedded = JsonSerializer.Deserialize(s, VrlfJson.Default.ModRegistry)!;
-        Assert.Equal(5, embedded.EmulatorList.Count);
+        Assert.Equal(6, embedded.EmulatorList.Count);
     }
 
     // Dolphin uses Documents\Dolphin Emulator whenever that folder exists, so with both present
@@ -99,6 +106,7 @@ public class EmulatorPackageTests
     [InlineData("duckstation")]
     [InlineData("mame")]
     [InlineData("flycast")]
+    [InlineData("rpcs3")]
     public async Task Installs_every_option_then_uninstalls_to_the_original_bytes(string id)
     {
         var emu = Registry().FindEmulator(id)!;
@@ -189,6 +197,18 @@ public class EmulatorPackageTests
                                              "RAW_HID-compliant mouse [HID_DEVICE_SYSTEM_VHF]_arcade.cfg" })
                     Assert.Contains("1:reload", EmuFixture.Read(folder, "mappings/" + name));
                 Assert.Equal("[digital]\nbind0 = 1:btn_b\n", EmuFixture.Read(folder, "mappings/SDL_Default Mouse.cfg"));
+                break;
+            case "rpcs3":
+                var r = S(folder, "config/config.yml");
+                Assert.Equal("Fake", YamlEditor.Get(r, "Input/Output", "Move"));
+                Assert.Equal("Fake", YamlEditor.Get(r, "Input/Output", "Camera"));
+                Assert.Equal("PS Eye", YamlEditor.Get(r, "Input/Output", "Camera type"));
+                Assert.Equal("Basic", YamlEditor.Get(r, "Input/Output", "Mouse"));
+                Assert.Equal("VRLF Move 2P",
+                    YamlEditor.Get(S(folder, "config/input_configs/active_input_configurations.yml"), "Active Configurations", "global"));
+                var input = EmuFixture.Read(folder, "config/input_configs/global/VRLF Move 2P.yml");
+                Assert.Contains("Player 7 Input:", input);
+                Assert.Contains("Left Pad Squircling Factor: 0", input);
                 break;
         }
     }

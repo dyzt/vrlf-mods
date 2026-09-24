@@ -6,6 +6,7 @@ public static class SettingsEdits
     public static EditPrior Apply(SettingsText t, EditSpec e)
     {
         if (e.Format == "mame") return MameIniEditor.Set(t, e.Key!, e.Value!);
+        if (e.Format == "yaml") return YamlEditor.Set(t, e.Section!, e.Key!, e.Value!);
         if (e.Replace is not null) return IniEditor.Replace(t, e.Section!, e.Replace);
         return IniEditor.Set(t, e.Section!, e.Key!, e.Value!);
     }
@@ -13,6 +14,7 @@ public static class SettingsEdits
     public static void Revert(SettingsText t, EditSpec e, EditPrior prior)
     {
         if (e.Format == "mame") MameIniEditor.RevertSet(t, e.Key!, prior);
+        else if (e.Format == "yaml") YamlEditor.RevertSet(t, e.Section!, e.Key!, prior);
         else if (e.Replace is not null) IniEditor.RevertReplace(t, e.Section!, prior);
         else IniEditor.RevertSet(t, e.Section!, e.Key!, prior);
     }

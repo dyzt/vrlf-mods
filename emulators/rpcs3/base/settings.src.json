@@ -1,0 +1,9 @@
+{
+  "version": "1.0",
+  "edits": [
+    {"file": "config/config.yml", "format": "yaml", "section": "Input/Output", "key": "Move", "value": "Fake"},
+    {"file": "config/config.yml", "format": "yaml", "section": "Input/Output", "key": "Camera", "value": "Fake"},
+    {"file": "config/config.yml", "format": "yaml", "section": "Input/Output", "key": "Camera type", "value": "PS Eye"},
+    {"file": "config/input_configs/active_input_configurations.yml", "format": "yaml", "section": "Active Configurations", "key": "global", "value": "VRLF Move 2P"}
+  ]
+}
