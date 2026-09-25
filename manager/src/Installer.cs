@@ -31,6 +31,14 @@ public sealed class Installer
         return (bytes, null);
     }
 
+    // The mod's settings file (mods.json config.file), zip-relative with forward slashes.
+    // The zip's copy only seeds it: Install writes it when absent and never over the player's.
+    public static string? ConfigRel(ModEntry mod) =>
+        mod.Config?.File is { Length: > 0 } f ? Zip.NormalizeEntryName(f) : null;
+
+    static bool IsConfig(string rel, string? configRel) =>
+        configRel is not null && string.Equals(rel, configRel, StringComparison.OrdinalIgnoreCase);
+
     public async Task<OpResult> Install(ModEntry mod, GameTarget target, byte[]? prefetched = null)
     {
         byte[] bytes;
@@ -52,6 +60,8 @@ public sealed class Installer
 
         var written = new List<InstalledFile>();
         var newBackups = new List<BackupRef>();   // backups made THIS call — the rollback scope
+        InstalledFile? keptConfig = null;         // the player's settings, left as they are
+        var configRel = ConfigRel(mod);
         var backupDir = _paths.BackupDir(mod.Id, target.Key);
 
         try
@@ -65,6 +75,14 @@ public sealed class Installer
                 var rel = Zip.NormalizeEntryName(entry.FullName);
                 if (rel.Length == 0) continue;
                 var dest = Zip.ResolveDest(target.Path, entry.FullName);
+
+                // Still the mod's file (uninstall removes it), but never backed up, overwritten
+                // or rolled back: Reinstall and Update would otherwise reset every toggle.
+                if (IsConfig(rel, configRel) && File.Exists(dest))
+                {
+                    keptConfig = new InstalledFile(rel, Sha256HexFile(dest));
+                    continue;
+                }
 
                 if (File.Exists(dest) && !written.Any(w => w.RelPath == rel)
                     && !priorInstalled.Contains(rel))
@@ -88,8 +106,9 @@ public sealed class Installer
                     allBackups.Add(b);
 
             // Receipt written LAST, but INSIDE the try so a Save failure rolls back this call.
+            var files = keptConfig is null ? written : new List<InstalledFile>(written) { keptConfig };
             _receipts.Save(new Receipt(mod.Id, mod.Version, target.Key, target.Path,
-                written, allBackups, DateTime.UtcNow.ToString("O")));
+                files, allBackups, DateTime.UtcNow.ToString("O")));
         }
         catch (Exception ex)
         {
@@ -100,7 +119,9 @@ public sealed class Installer
             return new OpResult(false, target.Key, $"install failed: {ex.Message}");
         }
 
-        return new OpResult(true, target.Key, $"installed {mod.Id} v{mod.Version} ({written.Count} files)");
+        var msg = $"installed {mod.Id} v{mod.Version} ({written.Count} files)";
+        if (keptConfig is not null) msg += $"; kept your settings ({keptConfig.RelPath})";
+        return new OpResult(true, target.Key, msg);
     }
 
     private void RollBack(string gamePath, List<InstalledFile> written, List<BackupRef> backups,
@@ -120,14 +141,18 @@ public sealed class Installer
         }
     }
 
-    public OpResult Uninstall(Receipt r)
+    // configRel: the mod's settings file. The player is meant to change it, so a changed one
+    // is not warned about; keepConfig (Update) leaves it, and any backup under it, in place.
+    public OpResult Uninstall(Receipt r, string? configRel = null, bool keepConfig = false)
     {
         var warnings = new List<string>();
         foreach (var f in r.Files)
         {
+            bool isConfig = IsConfig(f.RelPath, configRel);
+            if (isConfig && keepConfig) continue;
             var p = System.IO.Path.Combine(r.GamePath, f.RelPath.Replace('/', System.IO.Path.DirectorySeparatorChar));
             if (!File.Exists(p)) continue;
-            if (!string.Equals(Sha256HexFile(p), f.Sha256, StringComparison.OrdinalIgnoreCase))
+            if (!isConfig && !string.Equals(Sha256HexFile(p), f.Sha256, StringComparison.OrdinalIgnoreCase))
                 warnings.Add(f.RelPath);
             try { File.Delete(p); } catch (Exception ex) { return new OpResult(false, r.GameKey, $"could not delete {f.RelPath}: {ex.Message}"); }
         }
@@ -135,6 +160,7 @@ public sealed class Installer
         var backupDir = _paths.BackupDir(r.ModId, r.GameKey);
         foreach (var b in r.Backups)
         {
+            if (keepConfig && IsConfig(b.RelPath, configRel)) continue;
             var src = System.IO.Path.Combine(backupDir, b.RelPath.Replace('/', System.IO.Path.DirectorySeparatorChar));
             var dst = System.IO.Path.Combine(r.GamePath, b.RelPath.Replace('/', System.IO.Path.DirectorySeparatorChar));
             if (!File.Exists(src)) continue;
@@ -170,9 +196,12 @@ public sealed class Installer
         if (bytes is null)
             return new OpResult(false, current.GameKey, $"update aborted, kept v{current.Version}: {error}");
 
+        // The settings file stays where it is (Install then keeps it), so it needs no .bak copy.
+        var configRel = ConfigRel(mod);
         var preserved = new List<string>();
         foreach (var f in current.Files)
         {
+            if (IsConfig(f.RelPath, configRel)) continue;
             var p = System.IO.Path.Combine(current.GamePath, f.RelPath.Replace('/', System.IO.Path.DirectorySeparatorChar));
             if (File.Exists(p) && !string.Equals(Sha256HexFile(p), f.Sha256, StringComparison.OrdinalIgnoreCase))
             {
@@ -182,12 +211,13 @@ public sealed class Installer
             }
         }
 
-        var un = Uninstall(current);
+        var un = Uninstall(current, configRel, keepConfig: true);
         if (!un.Ok) return un;
         var inst = await Install(mod, new GameTarget(current.GameKey, current.GamePath), bytes);
         if (!inst.Ok) return inst;
 
         var msg = $"updated {mod.Id} {current.Version} → {mod.Version}";
+        if (inst.Message.Contains("kept your settings")) msg += "; kept your settings";
         if (preserved.Count > 0)
             msg += $"; kept your modified file(s) as: {string.Join(", ", preserved)}";
         return new OpResult(true, current.GameKey, msg);

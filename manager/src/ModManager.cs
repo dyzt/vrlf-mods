@@ -118,7 +118,7 @@ public sealed class ModManager
             var rcpt = _receipts.Load(mod.Id, key);
             if (rcpt is null) continue;
             var patchWarnings = _config.RevertPatches(mod, key, rcpt.GamePath);   // return the game fully stock
-            var un = _installer.Uninstall(rcpt);
+            var un = _installer.Uninstall(rcpt, Installer.ConfigRel(mod));
             if (patchWarnings.Count > 0 && un.Ok)
                 un = un with { Message = un.Message + "; warning: " + string.Join("; ", patchWarnings) };
             results.Add(un);

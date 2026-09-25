@@ -30,9 +30,16 @@ public class InstallerTests
         return ms.ToArray();
     }
 
-    static ModEntry Mod(byte[] zip, string ver = "1.0") =>
+    static ModEntry Mod(byte[] zip, string ver = "1.0", string? configFile = null) =>
         new("demo", "Demo", ver, "mods/demo/dist/demo.zip",
-            Installer.Sha256Hex(zip), new() { new GameRef(1, "Demo") }, false, null);
+            Installer.Sha256Hex(zip), new() { new GameRef(1, "Demo") }, false, null,
+            configFile is null ? null : new ConfigManifest(configFile, "kv", new()));
+
+    static Installer For(ModEntry mod, byte[] zip, AppPaths paths, ReceiptStore store) =>
+        new(new FakeHttpFetcher(new() { [RegistryLoader.ZipUrl(mod)] = zip }), paths, store);
+
+    const string Cfg = "BepInEx/plugins/demo.cfg";
+    static string CfgPath(string game) => Path.Combine(game, "BepInEx", "plugins", "demo.cfg");
 
     [Fact]
     public async Task Install_extracts_files_and_writes_receipt()
@@ -254,6 +261,129 @@ public class InstallerTests
         Assert.True(File.Exists(Path.Combine(game, "cfg.ini.bak-1.0")));    // user edit preserved
         Assert.Contains("cfg.ini.bak-1.0", res.Message);
         Assert.Equal("2.0", store.Load("demo", "1")!.Version);             // receipt bumped
+    }
+
+    // ---- the mod's config file (mods.json config.file) is seeded, never overwritten ----
+
+    [Fact]
+    public async Task Install_seeds_the_config_when_it_is_absent()
+    {
+        var paths = TempPaths();
+        var game = TempGameDir();
+        var zip = MakeZip((@"a.dll", "A"), (@"BepInEx\plugins\demo.cfg", "DEFAULT"));
+        var mod = Mod(zip, configFile: Cfg);
+        var store = new ReceiptStore(paths);
+
+        var res = await For(mod, zip, paths, store).Install(mod, new GameTarget("1", game));
+
+        Assert.True(res.Ok, res.Message);
+        Assert.Equal("DEFAULT", File.ReadAllText(CfgPath(game)));
+        Assert.DoesNotContain("kept your settings", res.Message);
+    }
+
+    [Fact]
+    public async Task Reinstall_keeps_the_players_config()
+    {
+        var paths = TempPaths();
+        var game = TempGameDir();
+        var zip = MakeZip((@"a.dll", "A"), (@"BepInEx\plugins\demo.cfg", "DEFAULT"));
+        var mod = Mod(zip, configFile: Cfg);
+        var store = new ReceiptStore(paths);
+        var installer = For(mod, zip, paths, store);
+        await installer.Install(mod, new GameTarget("1", game));
+        File.WriteAllText(CfgPath(game), "PLAYER");
+        File.WriteAllText(Path.Combine(game, "a.dll"), "DAMAGED");
+
+        var res = await installer.Install(mod, new GameTarget("1", game));
+
+        Assert.True(res.Ok, res.Message);
+        Assert.Equal("PLAYER", File.ReadAllText(CfgPath(game)));            // settings survive
+        Assert.Equal("A", File.ReadAllText(Path.Combine(game, "a.dll")));   // everything else repaired
+        Assert.Contains("kept your settings", res.Message);
+    }
+
+    [Fact]
+    public async Task Install_keeps_a_config_the_plugin_already_created_and_uninstall_removes_it()
+    {
+        var paths = TempPaths();
+        var game = TempGameDir();
+        Directory.CreateDirectory(Path.GetDirectoryName(CfgPath(game))!);
+        File.WriteAllText(CfgPath(game), "PLUGIN MADE");
+        var zip = MakeZip((@"a.dll", "A"), (@"BepInEx\plugins\demo.cfg", "DEFAULT"));
+        var mod = Mod(zip, configFile: Cfg);
+        var store = new ReceiptStore(paths);
+        var installer = For(mod, zip, paths, store);
+
+        await installer.Install(mod, new GameTarget("1", game));
+
+        Assert.Equal("PLUGIN MADE", File.ReadAllText(CfgPath(game)));
+        var rcpt = store.Load("demo", "1")!;
+        Assert.Empty(rcpt.Backups);                                          // nothing to restore over it
+        Assert.Contains(rcpt.Files, f => f.RelPath == Cfg);                  // but it is the mod's file
+        File.WriteAllText(CfgPath(game), "PLAYER");
+
+        var un = installer.Uninstall(rcpt, Installer.ConfigRel(mod));
+
+        Assert.True(un.Ok, un.Message);
+        Assert.False(File.Exists(CfgPath(game)));
+        Assert.DoesNotContain("modified", un.Message);                       // a changed cfg is expected
+    }
+
+    [Fact]
+    public async Task Failed_install_leaves_a_kept_config_alone()
+    {
+        var paths = TempPaths();
+        var game = TempGameDir();
+        Directory.CreateDirectory(Path.GetDirectoryName(CfgPath(game))!);
+        File.WriteAllText(CfgPath(game), "PLAYER");
+        var zip = MakeZip((@"BepInEx\plugins\demo.cfg", "DEFAULT"), (@"..\evil.dll", "PWN"));
+        var mod = Mod(zip, configFile: Cfg);
+
+        var res = await For(mod, zip, paths, new ReceiptStore(paths)).Install(mod, new GameTarget("1", game));
+
+        Assert.False(res.Ok);
+        Assert.Equal("PLAYER", File.ReadAllText(CfgPath(game)));             // rollback never deletes it
+    }
+
+    [Fact]
+    public async Task Update_keeps_the_config_in_place()
+    {
+        var paths = TempPaths();
+        var game = TempGameDir();
+        var store = new ReceiptStore(paths);
+        var v1 = MakeZip((@"a.dll", "A1"), (@"BepInEx\plugins\demo.cfg", "DEFAULT1"));
+        var mod1 = Mod(v1, "1.0", Cfg);
+        await For(mod1, v1, paths, store).Install(mod1, new GameTarget("1", game));
+        File.WriteAllText(CfgPath(game), "PLAYER");
+
+        var v2 = MakeZip((@"a.dll", "A2"), (@"BepInEx\plugins\demo.cfg", "DEFAULT2"));
+        var mod2 = Mod(v2, "2.0", Cfg);
+        var res = await For(mod2, v2, paths, store).Update(mod2, store.Load("demo", "1")!);
+
+        Assert.True(res.Ok, res.Message);
+        Assert.Equal("A2", File.ReadAllText(Path.Combine(game, "a.dll")));
+        Assert.Equal("PLAYER", File.ReadAllText(CfgPath(game)));
+        Assert.False(File.Exists(CfgPath(game) + ".bak-1.0"));
+        Assert.Contains("kept your settings", res.Message);
+        Assert.Contains(store.Load("demo", "1")!.Files, f => f.RelPath == Cfg);
+    }
+
+    [Fact]
+    public async Task Update_seeds_the_config_when_the_player_has_none()
+    {
+        var paths = TempPaths();
+        var game = TempGameDir();
+        var store = new ReceiptStore(paths);
+        var v1 = MakeZip((@"a.dll", "A1"));                                   // shipped no cfg
+        var mod1 = Mod(v1, "1.0", Cfg);
+        await For(mod1, v1, paths, store).Install(mod1, new GameTarget("1", game));
+
+        var v2 = MakeZip((@"a.dll", "A2"), (@"BepInEx\plugins\demo.cfg", "DEFAULT2"));
+        var mod2 = Mod(v2, "2.0", Cfg);
+        var res = await For(mod2, v2, paths, store).Update(mod2, store.Load("demo", "1")!);
+
+        Assert.True(res.Ok, res.Message);
+        Assert.Equal("DEFAULT2", File.ReadAllText(CfgPath(game)));
     }
 
     [Fact]
