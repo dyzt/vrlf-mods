@@ -1,0 +1,37 @@
+SCALE            1,80.000000,1,80.000000,0,0.000000,0,0,0,0,0
+SLEEP            0
+LABEL            reload
+SCALE_VEL        1,-0.500000,1,-0.500000,0,0.000000,1,0,0,0,0
+SCALE_BOUNDS     1,0,80.000000,80.000000,0.000000
+TIMED_COLOR_SET  0,0.000000,0,0.000000,0,0.000000,1,0.000000,300,0,0,0.000000,0.000000,0.000000,0.000000
+BR_ON_TRIGGER    gun0_released,shrink,0
+BR_ON_TRIGGER    gun0_pressed,grow,0
+SLEEP            0
+LABEL            grow
+BR_ON_TRIGGER    gun0_empty,shrink,0
+BR_ON_TRIGGER    gun0_reload_held,shrink,0
+SCALE_VEL        1,0.000000,1,0.000000,0,0.000000,0,0,0,0,0
+SLOOP            1
+SCALE_VEL        1,0.030000,1,0.030000,0,0.000000,1,0,0,0,0
+TIMED_COLOR_SET  0,0.000000,0,0.000000,0,0.000000,1,0.000000,2000,0,0,0.000000,0.000000,0.000000,0.000000
+SLEEP            0
+LABEL            shrink
+SCALE_VEL        1,0.000000,1,0.000000,0,0.000000,0,0,0,0,0
+SLOOP            1
+SCALE_VEL        1,-0.500000,1,-0.500000,0,0.000000,1,0,0,0,0
+SCALE_BOUNDS     1,0,80.000000,80.000000,0.000000
+TIMED_COLOR_SET  0,0.000000,0,0.000000,0,0.000000,1,0.000000,500,0,0,0.000000,0.000000,0.000000,0.000000
+SLEEP            0
+#
+EVENTACTION gun0_pressed GOTO grow
+EVENTACTION gun0_released GOTO shrink
+EVENTACTION gun0_reload GOTO reload
+EVENTACTION gun0_empty GOTO shrink
+#
+SMPARAM common.active_anim_channel 0
+SMPARAM common.active_camera 0
+SMPARAM common.active_vel 
+SMPARAM common.active_spline 
+SMPARAM common.active_sound_channel 0
+#
+STATEMACHINE GameCommon

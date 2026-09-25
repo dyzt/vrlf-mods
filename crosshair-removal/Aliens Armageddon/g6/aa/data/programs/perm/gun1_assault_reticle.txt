@@ -1,0 +1,14 @@
+SCALE            1,120.000000,1,120.000000,0,0.000000,0,1,0,0,0
+TIMED_COLOR_SET  1,1.000000,1,0.490000,1,0.000000,1,0.000000,0,0,0,0.000000,0.000000,0.000000,0.000000
+ATTACH_ACTOR_TO_ME gun1_assault_reticle_p1,,0,1,0.000000,0,0,,0,0.000000,0.000000,0.000000,1,0,0.000000,0.000000,0.000000,0,0,,0
+UI_FOLLOWGUN     0,1,1,1,1,0.100000
+#
+EVENTACTION player_gun1_assault_done KILLPRIME 
+#
+SMPARAM common.active_anim_channel 0
+SMPARAM common.active_camera 0
+SMPARAM common.active_vel 
+SMPARAM common.active_spline 
+SMPARAM common.active_sound_channel 0
+#
+STATEMACHINE GameCommon
