@@ -2,8 +2,8 @@
 
 - **Game:** Martian Panic (Steam app **2343850** — Funbox Media; on-rails Unity/Wii port)
 - **Type:** BepInEx 5 (Mono) — bundled inside the zip (winhttp.dll + doorstop + BepInEx tree)
-- **Registry version:** `1.0`
-- **Distribution zip:** `dist/martian-panic-v1.0.zip` (pulled from release `v1.0`)
+- **Registry version:** `1.0.1`
+- **Distribution zip:** `dist/martian-panic-v1.0.1.zip` (pulled from release `v1.0.1`)
 - **Aim note:** no aim mod needed — the framework's absolute mouse aim is already 1:1 (the game
   reads the OS cursor, never locks it, no deadzone). Profile uses `aim_mode: "absolute"`. This
   mod ONLY hides the on-screen crosshair (in VR your aim is the pointer).

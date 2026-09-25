@@ -2,8 +2,8 @@
 
 - **Game:** Big Buck Hunter: Ultimate Trophy (Steam app **3102290**)
 - **Type:** BepInEx 6 (IL2CPP) — bundled inside the zip
-- **Registry version:** `1.0.0`
-- **Distribution zip:** `dist/bbh-v1.0.0.zip`
+- **Registry version:** `1.0.1`
+- **Distribution zip:** `dist/bbh-v1.0.1.zip`
 
 ## To populate (rollout)
 

@@ -4,7 +4,7 @@
   "virtualgun": { "repo": "dyzt/vrlf-virtual-gun", "version": "v1.0.4", "zip": "vrlf-virtual-gun-1.0.4.zip", "sha256": "235547b8ed46609ec32df05cc30d8915af98c5903986db4e98e03458f8965c6d" },
   "mods": [
     { "id": "hotd1", "name": "House of the Dead: Remake VRLF Mod",
-      "version": "1.0.1", "zip": "mods/hotd1/dist/hotd1-v1.0.1.zip", "sha256": "1e924004ecd19bc0ffa928a304b05f89bf5cbc4b77c304962906f011fd69cf9d",
+      "version": "1.0.2", "zip": "mods/hotd1/dist/hotd1-v1.0.2.zip", "sha256": "c89d0d66e320bb907233a03e91e162d1807469a2e8eefcccb420c22a35b0863f",
       "games": [ { "appid": 1694600, "name": "THE HOUSE OF THE DEAD: Remake" } ],
       "requiresVigembusForCoop": true, "notes": null,
       "config": {
@@ -36,7 +36,7 @@
         ]
       } },
     { "id": "bbh", "name": "Big Buck Hunter Ultimate VRLF Mod",
-      "version": "1.0.0", "zip": "mods/bbh/dist/bbh-v1.0.0.zip", "sha256": "0bf1188480844c07d782a81d288df3aa412653a9f5b39ed27fb1209785fa29f2",
+      "version": "1.0.1", "zip": "mods/bbh/dist/bbh-v1.0.1.zip", "sha256": "c811b299ee6e226a084f021e4dbb812b805960a857ec0d98898cb7dd1246ea80",
       "games": [ { "appid": 3102290, "name": "Big Buck Hunter: Ultimate Trophy" } ],
       "requiresVigembusForCoop": false, "notes": null,
       "config": {
@@ -102,7 +102,7 @@
         ]
       } },
     { "id": "martian-panic", "name": "Martian Panic VRLF Mod",
-      "version": "1.0", "zip": "mods/martian-panic/dist/martian-panic-v1.0.zip", "sha256": "f171cba278190c2545696b4c61ef4d74758b304ef4aa8884a8addda88591f634",
+      "version": "1.0.1", "zip": "mods/martian-panic/dist/martian-panic-v1.0.1.zip", "sha256": "aeaa45cfaf94fc878b968da61b988c9dfc2e7909f3bb30e86f80696c7826d778",
       "games": [ { "appid": 2343850, "name": "Martian Panic" } ],
       "requiresVigembusForCoop": false,
       "notes": "Crosshair-hide only; absolute mouse aim is already 1:1, so no aim mod is needed.",

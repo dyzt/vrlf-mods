@@ -2,8 +2,8 @@
 
 - **Game:** THE HOUSE OF THE DEAD: Remake (Steam app **1694600**)
 - **Type:** BepInEx 5 (Mono) — bundled inside the zip (winhttp.dll + doorstop + BepInEx tree)
-- **Registry version:** `1.0.1`
-- **Distribution zip:** `dist/hotd1-v1.0.1.zip`
+- **Registry version:** `1.0.2`
+- **Distribution zip:** `dist/hotd1-v1.0.2.zip`
 
 ## To populate (rollout)
 
