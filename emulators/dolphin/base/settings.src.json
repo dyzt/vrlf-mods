@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "edits": [
     { "file": "Config/DSUClient.ini", "format": "ini", "section": "Server", "key": "Enabled", "value": "True" },
     { "file": "Config/DSUClient.ini", "format": "ini", "section": "Server", "key": "Entries", "value": "vrlf-wiimotes:127.0.0.1:26760;vrlf-nunchuks:127.0.0.1:26761;" },
