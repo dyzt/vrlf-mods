@@ -136,7 +136,7 @@
         { "id": "base", "label": "Base config", "short": "Base", "version": "1.1",
           "zip": "emulators/dolphin/dist/dolphin-base-v1.1.zip", "sha256": "eb37e5f38c923149491c75af8b4b426983910f4bd1f8a21542ff04790b973862" },
         { "id": "calibration", "label": "Calibration pack", "short": "Calibration", "requires": "base", "version": "1.2",
-          "zip": "emulators/dolphin/dist/dolphin-calibration-v1.2.zip", "sha256": "a15890f8786e55af8daeae4ec20cc175eb2b722d48740587919e75cf3469d3cd" },
+          "zip": "emulators/dolphin/dist/dolphin-calibration-v1.2.zip", "sha256": "6e258c241095310e77dd672d5bc9703c90a2d327122b7ee496e8e2d088f58eb1" },
         { "id": "crosshairs", "label": "Crosshair removal (P1)", "short": "Crosshairs", "requires": "base", "version": "1.1",
           "zip": "emulators/dolphin/dist/dolphin-crosshairs-v1.1.zip", "sha256": "612a5518ab59a1825d56399166c3e2f98d4c9ac046e2c36ddbdd272b8eec72d6" } ] },
     { "id": "duckstation", "name": "DuckStation", "processes": ["duckstation"], "exe": ["duckstation*.exe"],
