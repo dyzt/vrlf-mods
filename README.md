@@ -46,7 +46,7 @@ settings folder first; a portable copy keeps the lightgun setup apart from your 
 | `pcsx2` | `base` |
 | `pcsx2x6` | `base` (Namco System 246/256; settings in `Documents\PCSX2x6`, apart from PCSX2's) |
 | `rpcs3` | `base` (PS Move games: gun 1 is Player 7, gun 2 is Player 6) |
-| `flycast` | `base` (two guns through the Virtual Lightgun; the mappings match English Windows) |
+| `flycast` | `base` (two guns on VRLF's virtual pads, left stick aims) |
 | `mame` | `base` |
 
 Commands: `emulator list | status <id> | path <id> [<dir>|--clear] | install <id> [<option>] |

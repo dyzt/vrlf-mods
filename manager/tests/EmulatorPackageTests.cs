@@ -142,11 +142,6 @@ public class EmulatorPackageTests
 
     static SettingsText S(string folder, string rel) => SettingsText.Load(EmuFixture.PathOf(folder, rel));
 
-    // vrlf-virtual-gun pins lane N to VHF instance 2&56524c3N on every PC, and Flycast keys its
-    // port assignment on "raw_mouse_" + that device id.
-    static string FlycastLane(int lane) =>
-        $"maple_raw_mouse_HID_DEVICE_SYSTEM_VHF#2&56524c3{lane}&0&0000#{{378de44c-56ef-11d1-bc8c-00a0c91405dd}}";
-
     static void AssertInstalled(string id, string folder)
     {
         switch (id)
@@ -191,16 +186,17 @@ public class EmulatorPackageTests
                 break;
             case "flycast":
                 var f = S(folder, "emu.cfg");
-                Assert.Equal("yes", IniEditor.Get(f, "input", "RawInput"));
+                Assert.Equal("no", IniEditor.Get(f, "input", "RawInput"));
                 Assert.Equal("7", IniEditor.Get(f, "input", "device1"));
                 Assert.Equal("7", IniEditor.Get(f, "input", "device2"));
                 Assert.Equal("1", IniEditor.Get(f, "input", "device1.1"));
-                Assert.Equal("0", IniEditor.Get(f, "input", FlycastLane(0)));
-                Assert.Equal("1", IniEditor.Get(f, "input", FlycastLane(1)));
-                Assert.Contains("RawInput = yes\n", EmuFixture.Read(folder, "emu.cfg"));   // Flycast's own spacing
-                foreach (var name in new[] { "RAW_HID-compliant mouse [HID_DEVICE_SYSTEM_VHF].cfg",
-                                             "RAW_HID-compliant mouse [HID_DEVICE_SYSTEM_VHF]_arcade.cfg" })
-                    Assert.Contains("1:reload", EmuFixture.Read(folder, "mappings/" + name));
+                Assert.Equal("-1", IniEditor.Get(f, "input", "maple_sdl_mouse"));
+                // SDL opens VRLF's pads in reverse, so pad 0 is P2
+                Assert.Equal("1", IniEditor.Get(f, "input", "maple_sdl_joystick_0"));
+                Assert.Equal("0", IniEditor.Get(f, "input", "maple_sdl_joystick_1"));
+                Assert.Contains("maple_sdl_mouse = -1\n", EmuFixture.Read(folder, "emu.cfg"));   // Flycast's own spacing
+                foreach (var name in new[] { "SDL_Xbox 360 Controller.cfg", "SDL_Xbox 360 Controller_arcade.cfg" })
+                    Assert.Contains("4:reload", EmuFixture.Read(folder, "mappings/" + name));
                 Assert.Equal("[digital]\nbind0 = 1:btn_b\n", EmuFixture.Read(folder, "mappings/SDL_Default Mouse.cfg"));
                 break;
             case "rpcs3":
