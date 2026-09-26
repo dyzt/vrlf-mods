@@ -1,5 +1,5 @@
 # Dolphin lightgun calibration for VRLF
 
-Installed by vrlf-mods.exe. Imported from https://github.com/dyzt/Dolphin-Lightguns-Accuracy-Inis at commit 6874f06.
+Installed by vrlf-mods.exe. Imported from https://github.com/dyzt/Dolphin-Lightguns-Accuracy-Inis at commit 83e7925.
 
 Calibration and crosshair textures by Prof_gLX, PiperCalls, Ego_bizarro, Tovarichtch and Bratwurstmensch. GPL-3.0: see LICENSE.

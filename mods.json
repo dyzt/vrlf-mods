@@ -134,9 +134,9 @@
       "notes": "Calibration covers 27 USA games. Crosshair removal hides player 1's crosshair only.",
       "options": [
         { "id": "base", "label": "Base config", "short": "Base", "version": "1.1",
-          "zip": "emulators/dolphin/dist/dolphin-base-v1.1.zip", "sha256": "e4155e27fb09d6ae0ca8f566c5f01a99971bd3393cd0c429bd8f894c68f070cc" },
+          "zip": "emulators/dolphin/dist/dolphin-base-v1.1.zip", "sha256": "eb37e5f38c923149491c75af8b4b426983910f4bd1f8a21542ff04790b973862" },
         { "id": "calibration", "label": "Calibration pack", "short": "Calibration", "requires": "base", "version": "1.2",
-          "zip": "emulators/dolphin/dist/dolphin-calibration-v1.2.zip", "sha256": "a330d08025bde5c500069650770577501e8d27100ca4082289625b62f9f9a317" },
+          "zip": "emulators/dolphin/dist/dolphin-calibration-v1.2.zip", "sha256": "a15890f8786e55af8daeae4ec20cc175eb2b722d48740587919e75cf3469d3cd" },
         { "id": "crosshairs", "label": "Crosshair removal (P1)", "short": "Crosshairs", "requires": "base", "version": "1.1",
           "zip": "emulators/dolphin/dist/dolphin-crosshairs-v1.1.zip", "sha256": "612a5518ab59a1825d56399166c3e2f98d4c9ac046e2c36ddbdd272b8eec72d6" } ] },
     { "id": "duckstation", "name": "DuckStation", "processes": ["duckstation"], "exe": ["duckstation*.exe"],
