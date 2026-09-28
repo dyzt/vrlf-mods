@@ -42,14 +42,49 @@ public sealed class Vigem
         if (IsInstalled())
             return new OpResult(true, "vigembus", "ViGEmBus already installed");
 
+        var exe = await Download(info);
+        if (exe is null) return DownloadFailed;
+        _launcher.Launch(exe);
+        return new OpResult(true, "vigembus", "launched the ViGEmBus installer — follow its prompts (UAC)");
+    }
+
+    /// <summary>Ensure, but waits for the installer: `prereqs` runs inside Steam's install
+    /// script, and VRLF must not start until the driver is in.</summary>
+    public async Task<OpResult> InstallAndWait(VigemInfo info, IElevatedRunner runner)
+    {
+        if (IsInstalled())
+            return new OpResult(true, "vigembus", "ViGEmBus already installed");
+
+        var exe = await Download(info);
+        if (exe is null) return DownloadFailed;
+        try
+        {
+            return runner.RunElevated(exe, "") switch
+            {
+                0 => new OpResult(true, "vigembus", "ViGEmBus installed"),
+                3010 => new OpResult(true, "vigembus", "ViGEmBus installed; restart Windows to finish"),
+                VirtualGun.UacDeclined => new OpResult(false, "vigembus", "install cancelled at the UAC prompt"),
+                1602 => new OpResult(false, "vigembus", "install cancelled"),
+                var code => new OpResult(false, "vigembus", $"the ViGEmBus installer failed (exit {code})"),
+            };
+        }
+        catch (System.ComponentModel.Win32Exception ex)
+        {
+            return new OpResult(false, "vigembus", $"could not launch the installer: {ex.Message}");
+        }
+    }
+
+    private static readonly OpResult DownloadFailed =
+        new(false, "vigembus", "could not download the ViGEmBus installer (network required)");
+
+    private async Task<string?> Download(VigemInfo info)
+    {
         var bytes = await _http.TryGet(InstallerUrl(info));
-        if (bytes is null)
-            return new OpResult(false, "vigembus", "could not download the ViGEmBus installer (network required)");
+        if (bytes is null) return null;
 
         Directory.CreateDirectory(_paths.ModsRoot);
         var exe = Path.Combine(_paths.ModsRoot, $"ViGEmBus_{info.Version}.exe");
         await File.WriteAllBytesAsync(exe, bytes);
-        _launcher.Launch(exe);
-        return new OpResult(true, "vigembus", "launched the ViGEmBus installer — follow its prompts (UAC)");
+        return exe;
     }
 }

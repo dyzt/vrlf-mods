@@ -40,10 +40,11 @@ public static class Cli
             }
         }
 
-        var known = new[] { "list", "status", "install", "uninstall", "update", "vigembus", "virtualgun", "menu", "config", "path", "emulator" };
+        var known = new[] { "list", "status", "install", "uninstall", "update", "vigembus", "virtualgun", "menu", "config", "path", "emulator", "prereqs" };
         if (!known.Contains(cmd)) return Err(cmd, $"unknown command '{cmd}'");
 
         string? id = pos.Count > 0 ? pos[0] : null;
+        if (cmd == "prereqs" && id is not null) return Err(cmd, "prereqs takes no arguments");
         string? sub = null, value = null; bool flagOn = false;
 
         if (cmd == "emulator")

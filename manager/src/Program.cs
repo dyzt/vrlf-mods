@@ -12,6 +12,8 @@ internal static class Program
         var loader = new RegistryLoader(http, paths);
         var vigem = new Vigem(new RegistryServiceDetector(), http, new ProcessLauncher(), paths);
         var virtualGun = new VirtualGun(new RegistryVirtualGunState(), http, new ElevatedRunner(), paths);
+        if (p.Command == "prereqs")
+            return await new Prereqs(loader, vigem, virtualGun, new ElevatedRunner(), new ConsolePrompt()).Run();
         var emuReceipts = new EmulatorReceiptStore(paths);
         var emulators = new EmulatorService(loader,
             new EmulatorFolders(new GamePathStore(paths), new SystemKnownFolders()),
