@@ -143,10 +143,10 @@
       "locate": ["%LOCALAPPDATA%/DuckStation", "%DOCUMENTS%/DuckStation"], "marker": ["settings.ini"],
       "portable": { "flag": ["portable.txt"], "settings": "" },
       "needs": "vigembus", "profile": "\"DuckStation GunCon (2P)\" on the Steam Workshop",
-      "notes": "The GunCons take controller ports 1 and 2 while installed. Uninstall gives your pads back.",
+      "notes": "The GunCons take controller ports 1 and 2 while installed. For a Justifier game, set its Input Profile to VRLF Justifier 2P (XInput). Uninstall gives your pads back.",
       "options": [
-        { "id": "base", "label": "Base config", "short": "Base", "version": "1.0",
-          "zip": "emulators/duckstation/dist/duckstation-base-v1.0.zip", "sha256": "d078c85fc4c805106ddbdd2d5e4e064701a1118cb1e904acea5933bb1c95ecd9" } ] },
+        { "id": "base", "label": "Base config", "short": "Base", "version": "1.1",
+          "zip": "emulators/duckstation/dist/duckstation-base-v1.1.zip", "sha256": "5508473610e5d3ee3d19953f6e9642d7d64e159441996c3c2bfebfc8de1d660d" } ] },
     { "id": "pcsx2", "name": "PCSX2", "processes": ["pcsx2"], "exe": ["pcsx2*.exe"],
       "locate": ["%DOCUMENTS%/PCSX2"], "marker": ["inis/PCSX2.ini"],
       "portable": { "flag": ["portable.ini", "portable.txt"], "settings": "" },

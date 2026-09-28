@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "edits": [
     { "file": "settings.ini", "format": "ini", "section": "InputSources", "key": "SDL", "value": "false" },
     { "file": "settings.ini", "format": "ini", "section": "InputSources", "key": "XInput", "value": "true" },
