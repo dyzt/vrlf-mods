@@ -20,7 +20,11 @@ internal static class Program
             // script on every launch until it exits 0.
             var exitZero = new[] { PosixSignal.SIGHUP, PosixSignal.SIGINT, PosixSignal.SIGQUIT, PosixSignal.SIGTERM }
                 .Select(s => PosixSignalRegistration.Create(s, _ => Environment.Exit(0))).ToList();
-            try { return await new Prereqs(loader, vigem, virtualGun, new ElevatedRunner(), new ConsolePrompt()).Run(); }
+            try
+            {
+                return await new Prereqs(loader, vigem, virtualGun, new ElevatedRunner(), new ConsolePrompt(),
+                    new WindowsRestarter(), Prereqs.RestartWait).Run();
+            }
             finally { exitZero.ForEach(r => r.Dispose()); }
         }
         var emuReceipts = new EmulatorReceiptStore(paths);
