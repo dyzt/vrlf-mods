@@ -135,13 +135,25 @@ public class PrereqsTests
     }
 
     [Fact]
-    public async Task An_unexpected_error_still_exits_0()
+    public async Task Enter_alone_does_not_install_the_Virtual_Lightgun()
     {
-        var rig = Build(padInstalled: false, gunInstalled: true, new FakePrompt("y", ""));
+        var rig = Build(padInstalled: true, gunInstalled: false, new FakePrompt(""));
+
+        Assert.Equal(0, await rig.Prereqs.Run());
+        Assert.Contains("Install Virtual Lightgun? [y/N]", rig.Io.Output.ToString());
+        Assert.Empty(rig.GunRunner.Runs);
+    }
+
+    [Fact]
+    public async Task One_driver_throwing_still_installs_the_other_and_waits()
+    {
+        var rig = Build(padInstalled: false, gunInstalled: false, new FakePrompt("y", "y", ""));
         rig.PadRunner.Throws = new InvalidOperationException("boom");
 
         Assert.Equal(0, await rig.Prereqs.Run());
-        Assert.Contains("error: boom", rig.Io.Output.ToString());
+        Assert.Single(rig.GunRunner.Runs);
+        Assert.Contains("boom. Run vrlf-mods.exe in the VRLF folder to try again", rig.Io.Output.ToString());
+        Assert.Equal(3, rig.Io.Reads);   // the result stays on screen until Enter
     }
 
     [Theory]

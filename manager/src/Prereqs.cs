@@ -53,7 +53,11 @@ public sealed class Prereqs
     public async Task<int> Run()
     {
         try { await Offer(); }
-        catch (Exception ex) { _io.Write($"error: {ex.Message}\n"); }
+        catch (Exception ex)
+        {
+            _io.Write($"error: {ex.Message}\n");
+            await Pause();
+        }
         return 0;
     }
 
@@ -70,26 +74,44 @@ public sealed class Prereqs
         _io.Write("VRLF drivers\n\n" +
                   "Some VRLF profiles need these. vrlf-mods.exe in the VRLF folder installs them later too.\n" +
                   $"No answer in {AnswerTimeout.TotalSeconds:0} seconds skips them.\n");
-        bool pad = needPad && await Ask(PadLine, "Install ViGEmBus?");
-        bool gun = needGun && await Ask(GunLine, "Install Virtual Lightgun?");
+        bool pad = needPad && await Ask(PadLine, "Install ViGEmBus?", enterIsYes: true);
+        // Enter alone does not trust a root certificate.
+        bool gun = needGun && await Ask(GunLine, "Install Virtual Lightgun?", enterIsYes: false);
         if (!pad && !gun) return;
 
         _io.Write("\n");
-        if (pad) Show(await _vigem.InstallAndWait(reg.Vigembus, _runner));
-        if (gun) Show(await _gun.Install(reg.Virtualgun));
-        _io.Write("\nPress Enter to start VRLF.");
-        await _io.ReadLine(AnswerTimeout);
+        if (pad) Show(await Attempt(() => _vigem.InstallAndWait(reg.Vigembus, _runner)));
+        if (gun) Show(await Attempt(() => _gun.Install(reg.Virtualgun)));
+        await Pause();
     }
 
-    private async Task<bool> Ask(string about, string question)
+    private async Task<bool> Ask(string about, string question, bool enterIsYes)
     {
         if (_timedOut) return false;
-        _io.Write($"\n{about}\n{question} [Y/n] ");
+        _io.Write($"\n{about}\n{question} {(enterIsYes ? "[Y/n]" : "[y/N]")} ");
         var answer = await _io.ReadLine(AnswerTimeout);
         if (answer is null) { _timedOut = true; _io.Write("\n"); return false; }
-        return answer.Trim().ToLowerInvariant() is "" or "y" or "yes";
+        return answer.Trim().ToLowerInvariant() switch
+        {
+            "" => enterIsYes,
+            "y" or "yes" => true,
+            _ => false,
+        };
+    }
+
+    /// <summary>One driver's failure must not skip the other.</summary>
+    private static async Task<OpResult> Attempt(Func<Task<OpResult>> install)
+    {
+        try { return await install(); }
+        catch (Exception ex) { return new OpResult(false, "", ex.Message); }
     }
 
     private void Show(OpResult r) =>
         _io.Write(r.Ok ? $"{r.Message}\n" : $"{r.Message}. Run vrlf-mods.exe in the VRLF folder to try again.\n");
+
+    private async Task Pause()
+    {
+        _io.Write("\nPress Enter to start VRLF.");
+        await _io.ReadLine(AnswerTimeout);
+    }
 }
