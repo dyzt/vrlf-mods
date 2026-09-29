@@ -1,0 +1,18 @@
+TRANS            0,0.000000,0,0.000000,1,10.000000,0,0,0,0,0
+SCALE            1,90.000000,1,75.000000,0,0.000000,0,1,0,0,0
+TIMED_COLOR_SET  1,0.200000,1,1.000000,1,0.200000,1,0.000000,0,0,0,0.000000,0.000000,0.000000,0.000000
+UI_FOLLOWGUN     1,0,1,1,1,0.100000
+#
+EVENTACTION gun0_fired RUN_PROGRAM reticle_pulse_gun0,0,0,0
+EVENTACTION gun0_nail_gun_done KILLPRIME 
+EVENTACTION gun0_bolt_gun_done KILLPRIME 
+EVENTACTION gun0_hatchet_throw_done KILLPRIME 
+EVENTACTION gun0_knife_throw_done KILLPRIME 
+#
+SMPARAM common.active_anim_channel 0
+SMPARAM common.active_camera 0
+SMPARAM common.active_vel 
+SMPARAM common.active_spline 
+SMPARAM common.active_sound_channel 0
+#
+STATEMACHINE GameCommon

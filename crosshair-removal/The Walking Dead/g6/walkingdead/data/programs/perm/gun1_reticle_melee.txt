@@ -1,0 +1,15 @@
+TRANS            0,0.000000,0,0.000000,1,10.000000,0,0,0,0,0
+SCALE            1,90.000000,1,90.000000,0,0.000000,0,1,0,0,0
+TIMED_COLOR_SET  1,0.000000,1,0.200000,1,1.200000,1,0.000000,0,0,0,0.000000,0.000000,0.000000,0.000000
+UI_FOLLOWGUN     0,1,1,1,1,0.100000
+#
+EVENTACTION gun1_fired RUN_PROGRAM melee_pulse_gun1,0,0,0
+EVENTACTION gun1_darrel_melee_done KILLPRIME 
+#
+SMPARAM common.active_anim_channel 0
+SMPARAM common.active_camera 0
+SMPARAM common.active_vel 
+SMPARAM common.active_spline 
+SMPARAM common.active_sound_channel 0
+#
+STATEMACHINE GameCommon
