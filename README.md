@@ -19,8 +19,9 @@ This repository is the single public home for:
   installs the [Virtual Lightgun](https://github.com/dyzt/vrlf-virtual-gun) driver for Raw Input games
   (profiles with `aim_mode: hid`). In the menu, the **Virtual Lightgun** row opens Install (or Update),
   Reinstall and Uninstall. Both drivers prompt for UAC. `vrlf-mods prereqs` asks about each missing
-  driver and installs the ones accepted; VRLF's Steam install script runs it once before the first
-  launch. It always exits 0, and no answer in 60 seconds means no.
+  driver and installs the ones accepted, then offers to restart Windows if any installed; VRLF's
+  Steam install script runs it once before the first launch. It always exits 0, and no answer in
+  60 seconds means no.
 
 ## Mods
 

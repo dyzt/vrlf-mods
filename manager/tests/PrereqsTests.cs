@@ -19,6 +19,13 @@ public sealed class FakePrompt : IPrompt
     }
 }
 
+public sealed class FakeRestarter : IRestarter
+{
+    public bool Result { get; set; } = true;
+    public int Calls { get; private set; }
+    public bool Restart() { Calls++; return Result; }
+}
+
 public class PrereqsTests
 {
     static readonly VigemInfo PadInfo = new("nefarius/ViGEmBus", "v1.22.0");
@@ -32,7 +39,7 @@ public class PrereqsTests
     }
 
     sealed record Rig(Prereqs Prereqs, FakePrompt Io, FakeElevatedRunner PadRunner,
-        FakeElevatedRunner GunRunner, FakeHttpFetcher Http);
+        FakeElevatedRunner GunRunner, FakeHttpFetcher Http, FakeRestarter Restarter);
 
     static Rig Build(bool padInstalled, bool gunInstalled, FakePrompt io, bool offerGun = true,
         int padExit = 0, int gunExit = 0)
@@ -53,8 +60,9 @@ public class PrereqsTests
         var vigem = new Vigem(new FakeServiceDetector(padInstalled), http, new FakeLauncher(), paths);
         var gun = new VirtualGun(new FakeVirtualGunState { Version = gunInstalled ? "1.0.4" : null },
             http, gunRunner, paths);
-        return new(new Prereqs(new RegistryLoader(http, paths), vigem, gun, padRunner, io), io,
-            padRunner, gunRunner, http);
+        var restarter = new FakeRestarter();
+        return new(new Prereqs(new RegistryLoader(http, paths), vigem, gun, padRunner, io, restarter,
+            TimeSpan.FromMilliseconds(1)), io, padRunner, gunRunner, http, restarter);
     }
 
     [Fact]
@@ -75,7 +83,56 @@ public class PrereqsTests
         Assert.Equal(0, await rig.Prereqs.Run());
         Assert.EndsWith("ViGEmBus_v1.22.0.exe", Assert.Single(rig.PadRunner.Runs).Exe);
         Assert.Equal("install", Assert.Single(rig.GunRunner.Runs).Args);
-        Assert.Equal(3, rig.Io.Reads);   // two questions, then Press Enter
+        Assert.Equal(3, rig.Io.Reads);   // two questions, then the restart question
+        Assert.Contains("Restart now? [y/N]", rig.Io.Output.ToString());
+        Assert.Equal(0, rig.Restarter.Calls);   // Enter alone does not restart
+    }
+
+    [Fact]
+    public async Task Yes_to_restart_restarts_after_an_install()
+    {
+        var rig = Build(padInstalled: false, gunInstalled: true, new FakePrompt("y", "y"));
+
+        Assert.Equal(0, await rig.Prereqs.Run());
+        Assert.Equal(1, rig.Restarter.Calls);
+        Assert.Contains("Restarting Windows. Start VRLF again afterwards.", rig.Io.Output.ToString());
+    }
+
+    [Fact]
+    public async Task No_restart_question_when_nothing_installed()
+    {
+        var rig = Build(padInstalled: false, gunInstalled: true, new FakePrompt("y", "y"),
+            padExit: VirtualGun.UacDeclined);
+
+        Assert.Equal(0, await rig.Prereqs.Run());
+        Assert.DoesNotContain("Restart now?", rig.Io.Output.ToString());
+        Assert.Contains("Press Enter to start VRLF.", rig.Io.Output.ToString());
+        Assert.Equal(0, rig.Restarter.Calls);
+    }
+
+    [Fact]
+    public async Task A_restart_that_fails_says_so_and_waits()
+    {
+        var rig = Build(padInstalled: false, gunInstalled: true, new FakePrompt("y", "y", ""));
+        rig.Restarter.Result = false;
+
+        Assert.Equal(0, await rig.Prereqs.Run());
+        Assert.Contains("Windows did not restart. Restart it before playing.", rig.Io.Output.ToString());
+        Assert.Equal(3, rig.Io.Reads);
+    }
+
+    [Fact]
+    public async Task No_restart_question_after_a_timeout()
+    {
+        // ViGEmBus accepted, then nobody answers the Virtual Lightgun question: nobody is there
+        // to answer a restart either.
+        var rig = Build(padInstalled: false, gunInstalled: false, new FakePrompt("y", null));
+
+        Assert.Equal(0, await rig.Prereqs.Run());
+        Assert.Single(rig.PadRunner.Runs);
+        Assert.DoesNotContain("Restart now?", rig.Io.Output.ToString());
+        Assert.Equal(0, rig.Restarter.Calls);
+        Assert.Equal(2, rig.Io.Reads);
     }
 
     [Fact]
@@ -153,7 +210,7 @@ public class PrereqsTests
         Assert.Equal(0, await rig.Prereqs.Run());
         Assert.Single(rig.GunRunner.Runs);
         Assert.Contains("boom. Run vrlf-mods.exe in the VRLF folder to try again", rig.Io.Output.ToString());
-        Assert.Equal(3, rig.Io.Reads);   // the result stays on screen until Enter
+        Assert.Equal(3, rig.Io.Reads);   // the result stays on screen until the restart question
     }
 
     [Theory]
