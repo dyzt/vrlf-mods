@@ -7,7 +7,7 @@ public interface IHttpFetcher
 
 public sealed class HttpFetcher : IHttpFetcher
 {
-    private static readonly HttpClient Client = new() { Timeout = TimeSpan.FromSeconds(5) };
+    private static readonly HttpClient Client = new() { Timeout = TimeSpan.FromSeconds(120) };
 
     public async Task<byte[]?> TryGet(string url)
     {
