@@ -8,7 +8,9 @@ public record GameStatus(long Appid, string Name, bool Detected, string? Path, b
 public record ModStatus(string Id, string Name, string Version, string? InstalledVersion, List<GameStatus> Games);
 public record ListReport(string RegistrySource, List<ModStatus> Mods, bool VigemInstalled = false,
     bool VirtualGunInstalled = false, bool VirtualGunAvailable = false, string? VirtualGunUpdate = null,
-    string? VirtualGunVersion = null, List<EmulatorStatus>? Emulators = null);
+    string? VirtualGunVersion = null, List<EmulatorStatus>? Emulators = null,
+    bool DemulShooterInstalled = false, string? DemulShooterVersion = null, string? DemulShooterDir = null,
+    bool DemulShooterLinked = false);
 public record ActionReport(bool Ok, string Command, List<OpResult> Results);
 
 public sealed class ModManager
@@ -21,13 +23,15 @@ public sealed class ModManager
     private readonly ConfigController _config;
     private readonly VirtualGun? _virtualGun;
     private readonly EmulatorService? _emulators;
+    private readonly DemulShooter? _demulShooter;
 
     public ModManager(RegistryLoader loader, GameLocator locator, Installer installer,
                       ReceiptStore receipts, Vigem vigem, PatchRegistry? patches = null,
-                      VirtualGun? virtualGun = null, EmulatorService? emulators = null)
+                      VirtualGun? virtualGun = null, EmulatorService? emulators = null,
+                      DemulShooter? demulShooter = null)
     { _loader = loader; _locator = locator; _installer = installer; _receipts = receipts; _vigem = vigem;
       _config = new ConfigController(patches ?? PatchRegistry.Default()); _virtualGun = virtualGun;
-      _emulators = emulators; }
+      _emulators = emulators; _demulShooter = demulShooter; }
 
     public async Task<ListReport> List()
     {
@@ -35,7 +39,9 @@ public sealed class ModManager
         return new ListReport(source, reg.Mods.Select(StatusFor).ToList(), _vigem.IsInstalled(),
             _virtualGun?.IsInstalled() ?? false, reg.Virtualgun is not null,
             _virtualGun?.PendingUpdate(reg.Virtualgun), _virtualGun?.InstalledVersion(),
-            _emulators?.StatusesFor(reg));
+            _emulators?.StatusesFor(reg),
+            _demulShooter?.IsInstalled() ?? false, _demulShooter?.InstalledVersion(),
+            _demulShooter?.InstallDir, _demulShooter?.VrlfPointsHere() ?? false);
     }
 
     public async Task<ModStatus?> Status(string id)
@@ -168,6 +174,27 @@ public sealed class ModManager
         var res = Gun().Status(reg.Virtualgun);
         return new ActionReport(res.Ok, "virtualgun", new() { res });
     }
+
+    public async Task<ActionReport> DemulShooterInstall()
+    {
+        var res = await Demul().Install();
+        return new ActionReport(res.Ok, "demulshooter", new() { res });
+    }
+
+    public Task<ActionReport> DemulShooterUninstall()
+    {
+        var res = Demul().Uninstall();
+        return Task.FromResult(new ActionReport(res.Ok, "demulshooter", new() { res }));
+    }
+
+    public Task<ActionReport> DemulShooterStatus()
+    {
+        var res = Demul().Status();
+        return Task.FromResult(new ActionReport(res.Ok, "demulshooter", new() { res }));
+    }
+
+    private DemulShooter Demul() =>
+        _demulShooter ?? throw new InvalidOperationException("DemulShooter support is not wired in");
 
     private VirtualGun Gun() =>
         _virtualGun ?? throw new InvalidOperationException("Virtual Lightgun support is not wired in");

@@ -1,10 +1,11 @@
 namespace VrlfMods;
 
-public enum Screen { List, Mod, VirtualGun, Emulator }
+public enum Screen { List, Mod, VirtualGun, Emulator, DemulShooter }
 public enum RowKind { Header, Action, Toggle, Separator, Info }
 public enum TuiKey { Up, Down, Enter, Back, Quit, Refresh, Other }
 public enum ActionKind { None, Open, Back, Quit, Install, Reinstall, Uninstall, Update, Vigem, VirtualGun, Refresh,
                          Toggle, SetPath, ClearPath, GunInstall, GunUninstall,
+                         DemulShooter, DsInstall, DsUninstall,
                          EmuOpen, EmuToggle, EmuSetFolder, EmuClearFolder, EmuUpdate, EmuReapply }
 
 public record MenuRow(RowKind Kind, string Text, ActionKind Action = ActionKind.None,
@@ -41,7 +42,7 @@ public static class TuiModel
     {
         // Pad every name to the widest one (mods + the ViGEmBus row) so all the
         // installed/not-installed labels line up in a single column.
-        int width = new[] { "ViGEmBus".Length, "Virtual Lightgun".Length }
+        int width = new[] { "ViGEmBus".Length, "Virtual Lightgun".Length, "DemulShooter".Length }
             .Concat(r.Mods.Select(m => DisplayName(m.Name).Length))
             .Concat((r.Emulators ?? new()).Select(e => e.Name.Length))
             .Max();
@@ -63,6 +64,9 @@ public static class TuiModel
                 ActionKind.VirtualGun,
                 Help: "Virtual lightgun driver for Raw Input games (aim_mode hid). Enter to install, update, reinstall or uninstall."));
         }
+        rows.Add(new MenuRow(RowKind.Action, $"{"DemulShooter".PadRight(width)}   {DemulShooterStatus(r)}",
+            ActionKind.DemulShooter,
+            Help: "Arcade game outputs (recoil, hits) for the VR guns, set up for VRLF. Enter to install, update or uninstall."));
         rows.Add(new MenuRow(RowKind.Separator, "", Selectable: false));
 
         foreach (var m in r.Mods)
@@ -134,6 +138,39 @@ public static class TuiModel
             rows.Add(new(RowKind.Action, "Re-apply installed options", ActionKind.EmuReapply, ModId: e.Id));
         if (e.Folder is not null && !e.Locked)
             rows.Add(new(RowKind.Action, "Forget this folder", ActionKind.EmuClearFolder, ModId: e.Id));
+        return rows;
+    }
+
+    public static string DemulShooterStatus(ListReport r)
+    {
+        if (!r.DemulShooterInstalled) return "○ not installed";
+        var v = r.DemulShooterVersion is null ? "● installed" : $"● installed {r.DemulShooterVersion}";
+        return r.DemulShooterLinked ? v : v + "  (VRLF points elsewhere)";
+    }
+
+    /// <summary>The DemulShooter screen. Install and Update both fetch the newest GitHub release;
+    /// Update keeps the player's DemulShooter config.</summary>
+    public static List<MenuRow> DemulShooterRows(ListReport r)
+    {
+        var rows = new List<MenuRow>();
+        if (!r.DemulShooterInstalled)
+            rows.Add(new(RowKind.Action, "Install latest", ActionKind.DsInstall,
+                Help: "Downloads the newest DemulShooter from GitHub (argonlefou/DemulShooter), turns its network outputs on and points VRLF at it."));
+        else
+        {
+            rows.Add(new(RowKind.Action, "Update to latest", ActionKind.DsInstall,
+                Help: r.DemulShooterLinked
+                    ? "Downloads the newest release over this one. Your DemulShooter settings are kept."
+                    : "Downloads the newest release over this one, and points VRLF back at it."));
+            rows.Add(new(RowKind.Action, "Uninstall", ActionKind.DsUninstall,
+                Help: "Deletes the DemulShooter folder. Close DemulShooter first."));
+        }
+        rows.Add(new(RowKind.Separator, "", Selectable: false));
+        if (r.DemulShooterDir is not null)
+            rows.Add(new(RowKind.Info, $"Folder: {r.DemulShooterDir}", Selectable: false));
+        rows.Add(new(RowKind.Info, "In VRLF: a profile's Outputs = DemulShooter, then Launch DemulShooter.", Selectable: false));
+        rows.Add(new(RowKind.Info, DemulShooter.AntivirusNote, Selectable: false));
+        rows.Add(new(RowKind.Info, DemulShooter.Credit, Selectable: false));
         return rows;
     }
 
@@ -258,6 +295,8 @@ public static class TuiModel
                     return (new TuiState(Screen.Mod, 0, row.ModId), new TuiAction(ActionKind.Open, row.ModId));
                 if (row.Action == ActionKind.VirtualGun)
                     return (new TuiState(Screen.VirtualGun, 0, null), new TuiAction(ActionKind.VirtualGun));
+                if (row.Action == ActionKind.DemulShooter)
+                    return (new TuiState(Screen.DemulShooter, 0, null), new TuiAction(ActionKind.DemulShooter));
                 if (row.Action == ActionKind.Toggle)
                     return (s, new TuiAction(ActionKind.Toggle, row.ModId, row.ToggleKey, !(row.ToggleOn ?? false)));
                 if (row.Action == ActionKind.EmuOpen)

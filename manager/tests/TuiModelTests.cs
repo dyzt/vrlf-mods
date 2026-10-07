@@ -89,7 +89,8 @@ public class TuiModelTests
         Assert.Contains("ViGEmBus", off[0].Text);
         Assert.Contains("not installed", off[0].Text);
         Assert.Equal(ActionKind.VirtualGun, off[1].Action);
-        Assert.Equal(RowKind.Separator, off[2].Kind);   // gap before the mods
+        Assert.Equal(ActionKind.DemulShooter, off[2].Action);
+        Assert.Equal(RowKind.Separator, off[3].Kind);   // gap before the mods
 
         var on = TuiModel.ListRows(new ListReport("net", mods, VigemInstalled: true, VirtualGunAvailable: true));
         Assert.Contains("installed", on[0].Text);

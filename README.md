@@ -22,6 +22,14 @@ This repository is the single public home for:
   driver and installs the ones accepted, then offers to restart Windows if any installed; VRLF's
   Steam install script runs it once before the first launch. It always exits 0, and no answer in
   60 seconds means no.
+- **DemulShooter:** `vrlf-mods demulshooter install|uninstall|status`, or the **DemulShooter** row,
+  downloads the latest [DemulShooter](https://github.com/argonlefou/DemulShooter) release into
+  `%APPDATA%\VRLF\DemulShooter`, turns its network outputs on and points VRLF's `settings.cfg`
+  (`[outputs] demulshooter_path`) at it, so VRLF profiles with Outputs = DemulShooter feel the
+  game's recoil and hits. Install again to update; your DemulShooter settings are kept. No UAC.
+  DemulShooter is often picked up by antivirus software, so if it is failing to download, make an
+  exception for it. Huge shout out to [argonlefou](https://github.com/argonlefou) for their
+  incredible work!
 
 ## Mods
 
