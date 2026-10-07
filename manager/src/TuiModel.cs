@@ -169,6 +169,8 @@ public static class TuiModel
         if (r.DemulShooterDir is not null)
             rows.Add(new(RowKind.Info, $"Folder: {r.DemulShooterDir}", Selectable: false));
         rows.Add(new(RowKind.Info, "In VRLF: a profile's Outputs = DemulShooter, then Launch DemulShooter.", Selectable: false));
+        rows.Add(new(RowKind.Info, DemulShooter.AntivirusNote, Selectable: false));
+        rows.Add(new(RowKind.Info, DemulShooter.Credit, Selectable: false));
         return rows;
     }
 

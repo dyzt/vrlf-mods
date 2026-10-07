@@ -22,6 +22,13 @@ public sealed class DemulShooter
     public static readonly string[] ProcessNames = { "DemulShooter", "DemulShooterX64", "DemulShooter_GUI" };
     public const string VrlfProcess = "vr_lightgun_framework";
 
+    /// <summary>James's notes for the DemulShooter screen. Antivirus software often quarantines
+    /// DemulShooter (it patches other processes' memory), which shows up here as a failed
+    /// download or a zip missing files, so every such failure repeats the first.</summary>
+    public const string AntivirusNote =
+        "DemulShooter is often picked up by antivirus software, so if it is failing to download, make an exception for it.";
+    public const string Credit = "Huge shout out to argonlefou for their incredible work!";
+
     /// <summary>What VRLF needs in DemulShooter's own config.ini: outputs on, sent over the
     /// network (TCP 8000, which VRLF reads), not as window messages. DemulShooter's defaults are
     /// outputs off, window messages on.</summary>
@@ -104,7 +111,7 @@ public sealed class DemulShooter
 
         var bytes = await _http.TryGet(url);
         if (bytes is null)
-            return new OpResult(false, Key, $"could not download DemulShooter {tag}");
+            return new OpResult(false, Key, $"could not download DemulShooter {tag}. {AntivirusNote}");
         if (sha is not null && !string.Equals(Installer.Sha256Hex(bytes), sha, StringComparison.OrdinalIgnoreCase))
             return new OpResult(false, Key, "download hash mismatch; refusing to install");
 
@@ -126,12 +133,12 @@ public sealed class DemulShooter
         catch (Exception ex)
         {
             TryDelete(StagingDir);
-            return new OpResult(false, Key, $"the DemulShooter zip is corrupt or unsafe: {ex.Message}");
+            return new OpResult(false, Key, $"the DemulShooter zip is corrupt or unsafe: {ex.Message}. {AntivirusNote}");
         }
         if (!File.Exists(Path.Combine(StagingDir, Exe)))
         {
             TryDelete(StagingDir);
-            return new OpResult(false, Key, $"DemulShooter {tag} has no {Exe} at the top of its zip; not installed");
+            return new OpResult(false, Key, $"DemulShooter {tag} has no {Exe} at the top of its zip; not installed. {AntivirusNote}");
         }
 
         // An update keeps the player's own DemulShooter settings, then makes sure outputs are on.

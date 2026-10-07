@@ -299,6 +299,23 @@ public class DemulShooterTests
     }
 
     [Fact]
+    public void The_screen_carries_the_antivirus_note_and_the_credit()
+    {
+        var rows = TuiModel.DemulShooterRows(new ListReport("test", new()));
+        Assert.Contains(rows, r => r.Text.Contains("antivirus") && !r.Selectable);
+        Assert.Contains(rows, r => r.Text.Contains("argonlefou") && !r.Selectable);
+    }
+
+    [Fact]
+    public async Task A_download_that_fails_mentions_antivirus()
+    {
+        var (ds, _, _) = Build(zip: null);
+        var r = await ds.Install();
+        Assert.False(r.Ok);
+        Assert.Contains("antivirus", r.Message);
+    }
+
+    [Fact]
     public void Entering_the_row_opens_its_screen()
     {
         var rows = TuiModel.ListRows(new ListReport("test", new()));

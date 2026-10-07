@@ -27,6 +27,9 @@ This repository is the single public home for:
   `%APPDATA%\VRLF\DemulShooter`, turns its network outputs on and points VRLF's `settings.cfg`
   (`[outputs] demulshooter_path`) at it, so VRLF profiles with Outputs = DemulShooter feel the
   game's recoil and hits. Install again to update; your DemulShooter settings are kept. No UAC.
+  DemulShooter is often picked up by antivirus software, so if it is failing to download, make an
+  exception for it. Huge shout out to [argonlefou](https://github.com/argonlefou) for their
+  incredible work!
 
 ## Mods
 
