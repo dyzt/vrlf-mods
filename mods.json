@@ -4,7 +4,7 @@
   "virtualgun": { "repo": "dyzt/vrlf-virtual-gun", "version": "v1.0.4", "zip": "vrlf-virtual-gun-1.0.4.zip", "sha256": "235547b8ed46609ec32df05cc30d8915af98c5903986db4e98e03458f8965c6d" },
   "mods": [
     { "id": "hotd1", "name": "House of the Dead: Remake VRLF Mod",
-      "version": "1.0.2", "zip": "mods/hotd1/dist/hotd1-v1.0.2.zip", "sha256": "c89d0d66e320bb907233a03e91e162d1807469a2e8eefcccb420c22a35b0863f",
+      "version": "1.1.0", "zip": "mods/hotd1/dist/hotd1-v1.1.0.zip", "sha256": "60aa00869936c65d0230e71753b77616451cb96aff9fed74bdcab2a206ac525e",
       "games": [ { "appid": 1694600, "name": "THE HOUSE OF THE DEAD: Remake" } ],
       "requiresVigembusForCoop": true, "notes": null,
       "config": {
@@ -15,6 +15,8 @@
           { "key": "EnableAbsoluteAim", "label": "Absolute VR aim", "help": "Drive the crosshair from the framework aim bus instead of native mouse aim." },
           { "key": "EnableCoop", "label": "Enable 2-player co-op", "help": "Allow Player 2 (virtual pad) to join for co-op." },
           { "key": "EnableDeviceLock", "label": "Lock input devices (co-op)", "help": "Block stray controllers so only the framework's virtual pad is assigned." },
+          { "key": "MenuPointer", "label": "Point gun at menus", "help": "Player 1's gun selects the menu item it points at, so the trigger presses it." },
+          { "key": "MenuCursor", "label": "Menu cursor for any device", "help": "Menus show the cursor whatever device Player 1 is on, so the empty-hand laser clicks." },
           { "key": "LogAim", "label": "Verbose aim log", "help": "Write per-frame aim diagnostics to the log (verbose)." }
         ]
       } },
