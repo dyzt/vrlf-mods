@@ -46,7 +46,7 @@ public class RegistryLoaderTests
         var loader = new RegistryLoader(new FakeHttpFetcher(new() { [url] = null }), paths);
         var (reg, source) = await loader.Load();
         Assert.Equal("embedded", source);
-        Assert.Equal(9, reg.Mods.Count);      // the real embedded catalog
+        Assert.Equal(10, reg.Mods.Count);      // the real embedded catalog
     }
 
     [Fact]

@@ -127,6 +127,19 @@
           { "key": "DriveP2", "label": "Absolute aim (P2)" },
           { "key": "VerboseLog", "label": "Verbose log" }
         ]
+      } },
+    { "id": "freakhunter", "name": "FREAKHUNTER VRLF Mod",
+      "version": "1.1.2", "zip": "mods/freakhunter/dist/freakhunter-v1.1.2.zip", "sha256": "ce1caf26a0c5b558f43891c836e45a74b8905c4c661c18983dda9327abb8d4d7",
+      "games": [ { "appid": 2773870, "name": "FREAKHUNTER" } ],
+      "requiresVigembusForCoop": false,
+      "notes": "Puts the reticle on the cursor, so aim is 1:1 in fullscreen and windowed. Also works with Sinden and other light guns that move the cursor.",
+      "config": {
+        "file": "BepInEx/config/com.vrlightgun.freakhunter.cfg", "format": "bepinex",
+        "toggles": [
+          { "section": "Visuals", "key": "HideReticle", "label": "Hide crosshair" },
+          { "section": "Aim", "key": "AbsoluteAim", "label": "Absolute aim" },
+          { "section": "Debug", "key": "LogAim", "label": "Verbose log" }
+        ]
       } }
   ],
   "emulators": [
