@@ -32,4 +32,9 @@ public sealed class AppPaths
         => Path.Combine(EmulatorsRoot, "backups", emu, opt);
 
     public static string GameKeyForAppid(long appid) => appid.ToString();
+
+    /// <summary>%APPDATA%\VRLF: VRLF's own user folder, which holds the mods root.</summary>
+    public string VrlfRoot => Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(ModsRoot))!;
+    public string SettingsCfgPath => Path.Combine(VrlfRoot, "settings.cfg");
+    public string DemulShooterDir => Path.Combine(VrlfRoot, "DemulShooter");
 }

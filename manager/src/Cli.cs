@@ -40,7 +40,7 @@ public static class Cli
             }
         }
 
-        var known = new[] { "list", "status", "install", "uninstall", "update", "vigembus", "virtualgun", "menu", "config", "path", "emulator", "prereqs" };
+        var known = new[] { "list", "status", "install", "uninstall", "update", "vigembus", "virtualgun", "demulshooter", "menu", "config", "path", "emulator", "prereqs" };
         if (!known.Contains(cmd)) return Err(cmd, $"unknown command '{cmd}'");
 
         string? id = pos.Count > 0 ? pos[0] : null;
@@ -66,11 +66,11 @@ public static class Cli
                 Sub: esub, Value: esub == "path" ? null : arg, Clear: clear);
         }
 
-        if (cmd == "virtualgun" && id is not null)
+        if (cmd is ("virtualgun" or "demulshooter") && id is not null)
         {
             var lowered = id.ToLowerInvariant();
             if (lowered is not ("install" or "uninstall" or "status"))
-                return Err(cmd, "usage: virtualgun [install|uninstall|status]");
+                return Err(cmd, $"usage: {cmd} [install|uninstall|status]");
             id = lowered;
         }
 

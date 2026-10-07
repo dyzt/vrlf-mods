@@ -21,6 +21,7 @@ public static class Tui
             var rows = state.Screen switch
             {
                 Screen.VirtualGun => TuiModel.VirtualGunRows(list),
+                Screen.DemulShooter => TuiModel.DemulShooterRows(list),
                 Screen.Mod when status is not null => TuiModel.ModRows(status, cfg),
                 Screen.Emulator when emu is not null => TuiModel.EmulatorRows(emu),
                 _ => TuiModel.ListRows(list),
@@ -73,6 +74,19 @@ public static class Tui
                     message = await Working(() => mm.VirtualGunInstall());
                     list = await mm.List();
                     state = state with { Cursor = 0 };   // the rows change with the install state
+                    break;
+                case ActionKind.DemulShooter:
+                    list = await mm.List();
+                    break;
+                case ActionKind.DsInstall:
+                    message = await Working(() => mm.DemulShooterInstall());
+                    list = await mm.List();
+                    state = state with { Cursor = 0 };
+                    break;
+                case ActionKind.DsUninstall:
+                    message = await Working(() => mm.DemulShooterUninstall());
+                    list = await mm.List();
+                    state = state with { Cursor = 0 };
                     break;
                 case ActionKind.GunUninstall:
                     message = await Working(() => mm.VirtualGunUninstall());
@@ -198,6 +212,7 @@ public static class Tui
         Console.WriteLine(s.Screen switch
         {
             Screen.VirtualGun => $"  Virtual Lightgun  —  {TuiModel.VirtualGunStatus(list)}\n",
+            Screen.DemulShooter => $"  DemulShooter  —  {TuiModel.DemulShooterStatus(list)}\n",
             Screen.Mod when mod is not null => $"  {TuiModel.DisplayName(mod.Name)}  —  {TuiModel.RowStatus(mod)}\n",
             Screen.Emulator when emu is not null => $"  {emu.Name}   {TuiModel.EmulatorState(emu).Glyph} {TuiModel.EmulatorState(emu).Text}\n",
             _ => "  VRLF Mod Manager\n",

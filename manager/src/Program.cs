@@ -14,6 +14,7 @@ internal static class Program
         var loader = new RegistryLoader(http, paths);
         var vigem = new Vigem(new RegistryServiceDetector(), http, new ProcessLauncher(), paths);
         var virtualGun = new VirtualGun(new RegistryVirtualGunState(), http, new ElevatedRunner(), paths);
+        var demulShooter = new DemulShooter(http, paths, new SystemProcessProbe());
         if (p.Command == "prereqs")
         {
             // Closing the console or Ctrl+C would exit 0xC000013A, and Steam reruns an install
@@ -39,7 +40,8 @@ internal static class Program
             new ReceiptStore(paths),
             vigem,
             virtualGun: virtualGun,
-            emulators: emulators);
+            emulators: emulators,
+            demulShooter: demulShooter);
 
         return await Run(p, mm);
     }
@@ -83,6 +85,13 @@ internal static class Program
                         "install" => await mm.VirtualGunInstall(),
                         "uninstall" => await mm.VirtualGunUninstall(),
                         _ => await mm.VirtualGunStatus(),
+                    }, p.Json);
+                case "demulshooter":
+                    return Report(p.Id switch
+                    {
+                        "install" => await mm.DemulShooterInstall(),
+                        "uninstall" => await mm.DemulShooterUninstall(),
+                        _ => await mm.DemulShooterStatus(),
                     }, p.Json);
                 case "config":    return await Config(p, mm);
                 case "path":      return await GamePath(p, mm);
