@@ -2,8 +2,8 @@
 
 - **Game:** THE HOUSE OF THE DEAD 2: Remake (Steam app **3376690**)
 - **Type:** BepInEx 5 (Mono) — bundled inside the zip (winhttp.dll + doorstop + BepInEx tree)
-- **Registry version:** `1.0`
-- **Distribution zip:** `dist/hotd2-v1.0.zip`
+- **Registry version:** `1.1`
+- **Distribution zip:** `dist/hotd2-v1.1.zip`
 - **Co-op:** needs ViGEmBus for Player 2 (`vrlf-mods vigembus` installs it)
 
 ## To populate (rollout)

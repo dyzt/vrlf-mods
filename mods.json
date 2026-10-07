@@ -21,7 +21,7 @@
         ]
       } },
     { "id": "hotd2", "name": "House of the Dead 2: Remake VRLF Mod",
-      "version": "1.0", "zip": "mods/hotd2/dist/hotd2-v1.0.zip", "sha256": "684de9b130cd8c9d62877128fcce2ea5fd838c9d6311cfea1e99eaca75057b54",
+      "version": "1.1", "zip": "mods/hotd2/dist/hotd2-v1.1.zip", "sha256": "4ceca04a1670a59642b78eeb8ba1378bd265ecb024b74846f458af4658cd0475",
       "games": [ { "appid": 3376690, "name": "THE HOUSE OF THE DEAD 2: Remake" } ],
       "requiresVigembusForCoop": true, "notes": "co-op needs ViGEmBus for P2",
       "config": {
@@ -33,6 +33,7 @@
           { "section": "Aim", "key": "InvertY", "label": "Invert Y (P1)" },
           { "section": "Aim", "key": "PadAbsoluteAim", "label": "Absolute aim (P2 pad)" },
           { "section": "Aim", "key": "PadInvertY", "label": "Invert Y (P2 pad)" },
+          { "section": "Aim", "key": "PadAimFromBus", "label": "P2 aim from VRLF aim bus" },
           { "section": "Aim", "key": "LogAim", "label": "Verbose aim log" },
           { "section": "General", "key": "VerboseLog", "label": "Verbose log" }
         ]
