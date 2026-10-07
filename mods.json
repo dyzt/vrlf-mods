@@ -161,8 +161,8 @@
       "needs": "vigembus", "profile": "\"DuckStation GunCon (2P)\" on the Steam Workshop",
       "notes": "The GunCons take controller ports 1 and 2 while installed. For a Justifier game, set its Input Profile to VRLF Justifier 2P (XInput). It starts in Big Picture mode so VR controllers can drive its menus. Uninstall gives your pads back.",
       "options": [
-        { "id": "base", "label": "Base config", "short": "Base", "version": "1.2",
-          "zip": "emulators/duckstation/dist/duckstation-base-v1.2.zip", "sha256": "1169a5bd0df926c3e3bd804b14f0a2f92b52bbaa5e8564ca7b15e775dd3a9fa3" } ] },
+        { "id": "base", "label": "Base config", "short": "Base", "version": "1.3",
+          "zip": "emulators/duckstation/dist/duckstation-base-v1.3.zip", "sha256": "abd3fd02f436bdff9693bf8b6c359c37fa8ccfe10580e9aa0b7097ae0f1eefaa" } ] },
     { "id": "pcsx2", "name": "PCSX2", "processes": ["pcsx2"], "exe": ["pcsx2*.exe"],
       "locate": ["%DOCUMENTS%/PCSX2"], "marker": ["inis/PCSX2.ini"],
       "portable": { "flag": ["portable.ini", "portable.txt"], "settings": "" },
@@ -198,7 +198,7 @@
       "needs": "vigembus", "profile": "\"MAME - 2P Arcade\" on the Steam Workshop",
       "notes": "Select the VRLF profile before starting MAME. Gun remaps in cfg/default.cfg override this setup. Keep mame.ini next to mame.exe, not in ini/.",
       "options": [
-        { "id": "base", "label": "Base config", "short": "Base", "version": "1.0",
-          "zip": "emulators/mame/dist/mame-base-v1.0.zip", "sha256": "f84dc41bf961f0905e1216a70dc9aafe5760b5ce2c7ff6f111832c0729a6f002" } ] }
+        { "id": "base", "label": "Base config", "short": "Base", "version": "1.1",
+          "zip": "emulators/mame/dist/mame-base-v1.1.zip", "sha256": "832bfe515be41b52d46508aac25c319f26d604cc78a9dd96054c94c47e6350bc" } ] }
   ]
 }

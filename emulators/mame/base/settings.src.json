@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "edits": [
     { "file": "mame.ini", "format": "mame", "key": "keyboardprovider", "value": "dinput" },
     { "file": "mame.ini", "format": "mame", "key": "lightgunprovider", "value": "win32" },
@@ -14,6 +14,9 @@
     { "file": "mame.ini", "format": "mame", "key": "positional_device", "value": "joystick" },
     { "file": "mame.ini", "format": "mame", "key": "paddle_device", "value": "joystick" },
     { "file": "mame.ini", "format": "mame", "key": "dial_device", "value": "joystick" },
-    { "file": "mame.ini", "format": "mame", "key": "trackball_device", "value": "joystick" }
+    { "file": "mame.ini", "format": "mame", "key": "trackball_device", "value": "joystick" },
+    { "file": "mame.ini", "format": "mame", "key": "window", "value": "1" },
+    { "file": "mame.ini", "format": "mame", "key": "maximize", "value": "0" },
+    { "file": "mame.ini", "format": "mame", "key": "keepaspect", "value": "1" }
   ]
 }

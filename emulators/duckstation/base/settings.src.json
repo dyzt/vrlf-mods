@@ -1,10 +1,12 @@
 {
-  "version": "1.2",
+  "version": "1.3",
   "edits": [
     { "file": "settings.ini", "format": "ini", "section": "InputSources", "key": "SDL", "value": "false" },
     { "file": "settings.ini", "format": "ini", "section": "InputSources", "key": "XInput", "value": "true" },
     { "file": "settings.ini", "format": "ini", "section": "Pad1", "replaceFrom": "inputprofiles/VRLF GunCon 2P (XInput).ini#Pad1" },
     { "file": "settings.ini", "format": "ini", "section": "Pad2", "replaceFrom": "inputprofiles/VRLF GunCon 2P (XInput).ini#Pad2" },
-    { "file": "settings.ini", "format": "ini", "section": "Main", "key": "StartFullscreenUI", "value": "true" }
+    { "file": "settings.ini", "format": "ini", "section": "Main", "key": "StartFullscreenUI", "value": "true" },
+    { "file": "settings.ini", "format": "ini", "section": "Main", "key": "StartFullscreen", "value": "false" },
+    { "file": "settings.ini", "format": "ini", "section": "Display", "key": "AutoResizeWindow", "value": "true" }
   ]
 }
