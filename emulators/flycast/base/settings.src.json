@@ -1,5 +1,5 @@
 {
-  "version": "1.1",
+  "version": "1.2",
   "edits": [
     {"file": "emu.cfg", "format": "ini", "section": "input", "key": "RawInput", "value": "no"},
     {"file": "emu.cfg", "format": "ini", "section": "input", "key": "device1", "value": "7"},
