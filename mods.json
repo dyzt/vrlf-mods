@@ -140,6 +140,18 @@
           { "section": "Aim", "key": "AbsoluteAim", "label": "Absolute aim" },
           { "section": "Debug", "key": "LogAim", "label": "Verbose log" }
         ]
+      } },
+    { "id": "rambo", "name": "Rambo: The Video Game VRLF Mod",
+      "version": "1.0.0", "zip": "mods/rambo/dist/rambo-v1.0.0.zip", "sha256": "e26b227240bd1897b450c2025c3962b0b5eec14248811e9fd709c62850689f6c",
+      "games": [ { "appid": 274130, "name": "Rambo The Video Game" } ],
+      "requiresVigembusForCoop": true,
+      "notes": "Both players aim 1:1 from ViGEmBus pad guns, solo included. In Options > Display set Crosshair to None and turn Show Weapons off.",
+      "config": {
+        "file": "rambo_vrlf.cfg", "format": "kv",
+        "toggles": [
+          { "key": "AbsoluteAim", "label": "Absolute VR aim (bus)" },
+          { "key": "VerboseLog", "label": "Verbose log" }
+        ]
       } }
   ],
   "emulators": [
